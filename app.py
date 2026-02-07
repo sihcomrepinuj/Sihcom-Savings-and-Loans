@@ -20,7 +20,7 @@ app.secret_key = Config.SECRET_KEY
 
 # Production settings: trust Railway's proxy headers, secure cookies
 import os
-if os.environ.get('RAILWAY_ENVIRONMENT'):
+if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config['SESSION_COOKIE_SECURE'] = True
