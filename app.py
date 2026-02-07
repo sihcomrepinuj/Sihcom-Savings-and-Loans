@@ -1,3 +1,4 @@
+import logging
 import secrets
 from functools import wraps
 from flask import (
@@ -10,6 +11,9 @@ import database
 import models
 import interest
 import wallet
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
@@ -84,20 +88,29 @@ def login():
 def callback():
     code = request.args.get('code')
     state = request.args.get('state')
+    logger.info(f'Callback hit: code={bool(code)}, state={state}, session_state={session.get("oauth_state")}')
 
     if not code or state != session.pop('oauth_state', None):
+        logger.warning('State mismatch or no code — authentication failed')
         flash('Authentication failed. Please try again.', 'danger')
         return redirect(url_for('index'))
 
     try:
         auth_preston = base_preston.authenticate(code)
-    except Exception:
+    except Exception as e:
+        logger.error(f'Preston authenticate error: {e}')
         flash('SSO authentication error. Please try again.', 'danger')
         return redirect(url_for('index'))
 
-    whoami = auth_preston.whoami()
-    character_id = int(whoami['character_id'])
-    character_name = whoami['character_name']
+    try:
+        whoami = auth_preston.whoami()
+        logger.info(f'whoami result: {whoami}')
+        character_id = int(whoami['character_id'])
+        character_name = whoami['character_name']
+    except Exception as e:
+        logger.error(f'whoami error: {e}')
+        flash('Failed to retrieve character info. Please try again.', 'danger')
+        return redirect(url_for('index'))
 
     user = models.get_or_create_user(
         character_id=character_id,
