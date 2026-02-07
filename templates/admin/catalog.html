@@ -54,6 +54,7 @@
             <table class="table table-dark table-striped table-sm">
                 <thead>
                     <tr>
+                        <th>Image</th>
                         <th>Ship Name</th>
                         <th>Price</th>
                         <th>Description</th>
@@ -65,6 +66,13 @@
                     {% for ship in ships %}
                     <tr>
                         <form method="POST" action="{{ url_for('admin_catalog_edit', ship_id=ship['id']) }}">
+                        <td>
+                            {% if ship['type_id'] %}
+                            <img src="{{ ship['type_id'] | ship_image(64) }}" alt="" style="height: 40px;">
+                            {% else %}
+                            <span class="text-secondary" title="No image">--</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
                                    name="ship_name" value="{{ ship['ship_name'] }}" required>
@@ -89,6 +97,11 @@
                         <td>
                             <button type="submit" class="btn btn-outline-info btn-sm">Save</button>
                         </form>
+                            <form method="POST" action="{{ url_for('admin_catalog_refresh_image', ship_id=ship['id']) }}"
+                                  class="d-inline">
+                                <button type="submit" class="btn btn-outline-warning btn-sm"
+                                        title="Re-lookup ship image from EVE">&#x1f5bc;</button>
+                            </form>
                             <form method="POST" action="{{ url_for('admin_catalog_remove', ship_id=ship['id']) }}"
                                   class="d-inline"
                                   onsubmit="return confirm('Remove {{ ship.ship_name }} from catalog?');">

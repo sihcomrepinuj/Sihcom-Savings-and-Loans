@@ -372,6 +372,8 @@ def admin_catalog_edit(ship_id):
     type_id = ship['type_id']
     if ship_name.lower() != ship['ship_name'].lower():
         type_id = esi.search_type_id(ship_name)
+        if not type_id:
+            flash(f'Could not find "{ship_name}" in EVE database. Image removed.', 'warning')
 
     models.update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=type_id)
     flash(f'{ship_name} updated.', 'success')
@@ -386,6 +388,24 @@ def admin_catalog_remove(ship_id):
         abort(404)
     models.remove_catalog_ship(ship_id)
     flash(f'{ship["ship_name"]} removed from catalog.', 'info')
+    return redirect(url_for('admin_catalog'))
+
+
+@app.route('/admin/catalog/<int:ship_id>/refresh-image', methods=['POST'])
+@admin_required
+def admin_catalog_refresh_image(ship_id):
+    ship = models.get_catalog_ship(ship_id)
+    if not ship:
+        abort(404)
+    type_id = esi.search_type_id(ship['ship_name'])
+    if type_id:
+        models.update_catalog_ship(
+            ship_id, ship['ship_name'], ship['price'],
+            ship['description'], ship['is_available'], type_id=type_id
+        )
+        flash(f'Image found for {ship["ship_name"]}!', 'success')
+    else:
+        flash(f'Could not find "{ship["ship_name"]}" in EVE database. Try checking the spelling.', 'warning')
     return redirect(url_for('admin_catalog'))
 
 
