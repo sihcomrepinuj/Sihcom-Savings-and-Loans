@@ -43,6 +43,23 @@ def format_isk(value):
     return f'{value:,.2f} ISK'
 
 
+@app.template_filter('isk_short')
+def format_isk_short(value):
+    """Abbreviated ISK for stat cards: 22B, 1.5T, 500M, 50K."""
+    if value is None:
+        return '0 ISK'
+    v = float(value)
+    if v >= 1_000_000_000_000:
+        return f'{v / 1_000_000_000_000:,.1f}T ISK'
+    if v >= 1_000_000_000:
+        return f'{v / 1_000_000_000:,.1f}B ISK'
+    if v >= 1_000_000:
+        return f'{v / 1_000_000:,.1f}M ISK'
+    if v >= 1_000:
+        return f'{v / 1_000:,.1f}K ISK'
+    return f'{v:,.0f} ISK'
+
+
 # --- Auth decorators ---
 
 def login_required(f):

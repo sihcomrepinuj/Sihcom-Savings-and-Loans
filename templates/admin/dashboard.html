@@ -27,13 +27,13 @@
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
             <small class="text-light">Total Deposited</small>
-            <h4 class="text-white">{{ stats['total_deposited'] | isk }}</h4>
+            <h4 class="text-white">{{ stats['total_deposited'] | isk_short }}</h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
             <small class="text-light">Interest Paid</small>
-            <h4 class="text-success">{{ stats['total_interest'] | isk }}</h4>
+            <h4 class="text-success">{{ stats['total_interest'] | isk_short }}</h4>
         </div>
     </div>
     <div class="col-md-2">
