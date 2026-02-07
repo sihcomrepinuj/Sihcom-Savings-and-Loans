@@ -67,7 +67,17 @@ def admin_required(f):
 
 # --- Preston SSO setup ---
 
-base_preston = Preston(
+# Regular members: no ESI scopes needed, just authentication
+member_preston = Preston(
+    user_agent=Config.USER_AGENT,
+    client_id=Config.EVE_CLIENT_ID,
+    client_secret=Config.EVE_CLIENT_SECRET,
+    callback_url=Config.EVE_CALLBACK_URL,
+    scope='',
+)
+
+# Admin (Bernie): needs wallet read scope
+admin_preston_base = Preston(
     user_agent=Config.USER_AGENT,
     client_id=Config.EVE_CLIENT_ID,
     client_secret=Config.EVE_CLIENT_SECRET,
@@ -87,9 +97,12 @@ def index():
 
 @app.route('/login')
 def login():
+    admin_mode = request.args.get('admin') == '1'
     state = secrets.token_urlsafe(32)
     session['oauth_state'] = state
-    auth_url = base_preston.get_authorize_url(state=state)
+    session['login_admin_mode'] = admin_mode
+    preston = admin_preston_base if admin_mode else member_preston
+    auth_url = preston.get_authorize_url(state=state)
     return redirect(auth_url)
 
 
@@ -104,8 +117,11 @@ def callback():
         flash('Authentication failed. Please try again.', 'danger')
         return redirect(url_for('index'))
 
+    admin_mode = session.pop('login_admin_mode', False)
+    preston = admin_preston_base if admin_mode else member_preston
+
     try:
-        auth_preston = base_preston.authenticate(code)
+        auth_preston = preston.authenticate(code)
     except Exception as e:
         logger.error(f'Preston authenticate error: {e}')
         flash('SSO authentication error. Please try again.', 'danger')
@@ -121,10 +137,13 @@ def callback():
         flash('Failed to retrieve character info. Please try again.', 'danger')
         return redirect(url_for('index'))
 
+    # Only store refresh token for admin (wallet scope) logins
+    refresh_token = auth_preston.refresh_token if admin_mode else None
+
     user = models.get_or_create_user(
         character_id=character_id,
         character_name=character_name,
-        refresh_token=auth_preston.refresh_token,
+        refresh_token=refresh_token,
     )
 
     session['character_id'] = character_id

@@ -22,10 +22,17 @@ def get_or_create_user(character_id, character_name, refresh_token):
             'SELECT * FROM users WHERE character_id = ?', (character_id,)
         ).fetchone()
     else:
-        db.execute(
-            'UPDATE users SET refresh_token = ?, character_name = ? WHERE character_id = ?',
-            (refresh_token, character_name, character_id)
-        )
+        # Only update refresh_token if a new one was provided (admin login)
+        if refresh_token:
+            db.execute(
+                'UPDATE users SET refresh_token = ?, character_name = ? WHERE character_id = ?',
+                (refresh_token, character_name, character_id)
+            )
+        else:
+            db.execute(
+                'UPDATE users SET character_name = ? WHERE character_id = ?',
+                (character_name, character_id)
+            )
         db.commit()
         user = db.execute(
             'SELECT * FROM users WHERE character_id = ?', (character_id,)
