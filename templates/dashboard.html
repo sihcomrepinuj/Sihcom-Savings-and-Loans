@@ -13,8 +13,12 @@
     {% set bal = balances.get(order['id']) %}
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card bg-secondary bg-opacity-25 border-secondary h-100">
+            {% if order['type_id'] %}
+            <img src="{{ order['type_id'] | ship_image(128) }}" class="card-img-top p-2"
+                 alt="{{ order['ship_name'] }}" style="height: 120px; object-fit: contain;">
+            {% endif %}
             <div class="card-body">
-                <h5 class="card-title">{{ order['ship_name'] }}</h5>
+                <h5 class="card-title text-white">{{ order['ship_name'] }}</h5>
                 <span class="badge
                     {% if order['status'] == 'pending_approval' %}bg-warning text-dark
                     {% elif order['status'] == 'active' %}bg-success

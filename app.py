@@ -11,6 +11,7 @@ import database
 import models
 import interest
 import wallet
+import esi
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,6 +59,12 @@ def format_isk_short(value):
     if v >= 1_000:
         return f'{v / 1_000:,.1f}K ISK'
     return f'{v:,.0f} ISK'
+
+
+@app.template_filter('ship_image')
+def ship_image_url(type_id, size=256):
+    """Return EVE image server URL for a ship render."""
+    return esi.get_ship_image_url(type_id, size) if type_id else None
 
 
 # --- Auth decorators ---
@@ -218,6 +225,7 @@ def request_ship(ship_id):
         ship_name=ship['ship_name'],
         goal_price=ship['price'],
         status='pending_approval',
+        type_id=ship['type_id'],
     )
     flash(f'Savings goal for {ship["ship_name"]} submitted for approval!', 'success')
     return redirect(url_for('dashboard'))
@@ -334,7 +342,12 @@ def admin_catalog_add():
         flash('Please provide a valid ship name and price.', 'danger')
         return redirect(url_for('admin_catalog'))
 
-    models.add_catalog_ship(ship_name, price, description)
+    # Auto-lookup EVE type ID for ship image
+    type_id = esi.search_type_id(ship_name)
+    if not type_id:
+        flash(f'Could not find "{ship_name}" in EVE database. Ship added without image.', 'warning')
+
+    models.add_catalog_ship(ship_name, price, description, type_id=type_id)
     flash(f'{ship_name} added to catalog.', 'success')
     return redirect(url_for('admin_catalog'))
 
@@ -355,7 +368,12 @@ def admin_catalog_edit(ship_id):
         flash('Please provide a valid ship name and price.', 'danger')
         return redirect(url_for('admin_catalog'))
 
-    models.update_catalog_ship(ship_id, ship_name, price, description, is_available)
+    # Re-lookup type_id if ship name changed, otherwise keep existing
+    type_id = ship['type_id']
+    if ship_name.lower() != ship['ship_name'].lower():
+        type_id = esi.search_type_id(ship_name)
+
+    models.update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=type_id)
     flash(f'{ship_name} updated.', 'success')
     return redirect(url_for('admin_catalog'))
 
@@ -388,7 +406,8 @@ def admin_create_order():
             return render_template('admin/create_order.html', users=users)
 
         # Admin-created orders go straight to active
-        order_id = models.create_order(user_id, ship_name, goal_price, notes, status='active')
+        type_id = esi.search_type_id(ship_name)
+        order_id = models.create_order(user_id, ship_name, goal_price, notes, status='active', type_id=type_id)
         flash(f'Savings goal created for {ship_name}.', 'success')
         return redirect(url_for('admin_order_detail', order_id=order_id))
 

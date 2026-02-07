@@ -82,21 +82,21 @@ def get_catalog_ship(ship_id):
     return db.execute('SELECT * FROM ship_catalog WHERE id = ?', (ship_id,)).fetchone()
 
 
-def add_catalog_ship(ship_name, price, description=None):
+def add_catalog_ship(ship_name, price, description=None, type_id=None):
     db = database.get_db()
     db.execute(
-        'INSERT INTO ship_catalog (ship_name, price, description) VALUES (?, ?, ?)',
-        (ship_name, price, description)
+        'INSERT INTO ship_catalog (ship_name, price, description, type_id) VALUES (?, ?, ?, ?)',
+        (ship_name, price, description, type_id)
     )
     db.commit()
 
 
-def update_catalog_ship(ship_id, ship_name, price, description, is_available):
+def update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=None):
     db = database.get_db()
     db.execute(
-        'UPDATE ship_catalog SET ship_name = ?, price = ?, description = ?, is_available = ? '
+        'UPDATE ship_catalog SET ship_name = ?, price = ?, description = ?, is_available = ?, type_id = ? '
         'WHERE id = ?',
-        (ship_name, price, description, is_available, ship_id)
+        (ship_name, price, description, is_available, type_id, ship_id)
     )
     db.commit()
 
@@ -109,12 +109,12 @@ def remove_catalog_ship(ship_id):
 
 # --- Ship Orders ---
 
-def create_order(user_id, ship_name, goal_price, notes=None, status='pending_approval'):
+def create_order(user_id, ship_name, goal_price, notes=None, status='pending_approval', type_id=None):
     db = database.get_db()
     db.execute(
-        'INSERT INTO ship_orders (user_id, ship_name, goal_price, notes, status) '
-        'VALUES (?, ?, ?, ?, ?)',
-        (user_id, ship_name, goal_price, notes, status)
+        'INSERT INTO ship_orders (user_id, ship_name, goal_price, notes, status, type_id) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
+        (user_id, ship_name, goal_price, notes, status, type_id)
     )
     db.commit()
     return db.execute('SELECT last_insert_rowid()').fetchone()[0]

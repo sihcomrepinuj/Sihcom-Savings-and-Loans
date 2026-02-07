@@ -16,6 +16,10 @@
     {% for ship in ships %}
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card bg-secondary bg-opacity-25 border-secondary h-100">
+            {% if ship['type_id'] %}
+            <img src="{{ ship['type_id'] | ship_image }}" class="card-img-top p-3"
+                 alt="{{ ship['ship_name'] }}" style="height: 200px; object-fit: contain;">
+            {% endif %}
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title text-white">{{ ship['ship_name'] }}</h5>
                 <p class="card-text text-info fs-5">{{ ship['price'] | isk }}</p>

@@ -130,6 +130,10 @@ def init_db():
     _try_alter(db, "ALTER TABLE deposits ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'")
     _try_alter(db, "ALTER TABLE deposits ADD COLUMN journal_id INTEGER")
 
+    # Add type_id to ship_catalog and ship_orders for ship images
+    _try_alter(db, "ALTER TABLE ship_catalog ADD COLUMN type_id INTEGER")
+    _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN type_id INTEGER")
+
     for key, value in DEFAULT_SETTINGS.items():
         db.execute(
             'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',

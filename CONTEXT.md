@@ -30,7 +30,8 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`
 - **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`. Uses PERIOD_DAYS dict.
 - **wallet.py** - ESI wallet sync: `_get_bank_preston()`, `fetch_wallet_journal()`, `sync_wallet()`. Filters for `player_donation` with `amount > 0`, deduplicates via journal_id, auto-matches to users with active orders
-- **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, logging on callback
+- **esi.py** - Public ESI helper: `search_type_id()` for ship name→type_id lookup, `get_ship_image_url()` for EVE image server URLs
+- **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, `isk_short` and `ship_image` template filters, logging on callback
 
 ### Templates (all in templates/)
 - **base.html** - Bootstrap 5 dark theme, nav with Ship Catalog link and Admin dropdown
