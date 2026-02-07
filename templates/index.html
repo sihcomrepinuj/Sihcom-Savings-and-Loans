@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Sihcom Savings &amp; Loans{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="display-4 mb-3">Sihcom Savings &amp; Loans</h1>
+    <p class="lead text-secondary mb-4">
+        Save toward your next ship. Your deposits earn compound interest until you reach your goal.
+    </p>
+    <a href="{{ url_for('login') }}">
+        <img src="https://web.ccpgamescdn.com/eveonlineassets/developers/eve-sso-login-black-large.png"
+             alt="Log in with EVE Online" class="mt-3">
+    </a>
+</div>
+{% endblock %}

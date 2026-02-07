@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:kyria.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:esi.evetech.net)",
+      "WebFetch(domain:developers.eveonline.com)",
+      "WebFetch(domain:apidog.com)",
+      "WebFetch(domain:share.apidog.com)",
+      "Bash(if exist sihcom.db del sihcom.db)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}New Savings Goal - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+        <li class="breadcrumb-item active">New Savings Goal</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card bg-secondary bg-opacity-25 border-secondary">
+            <div class="card-header">
+                <h4 class="mb-0">Create Savings Goal</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">Member</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="user_id" name="user_id" required>
+                            <option value="">Select a member...</option>
+                            {% for user in users %}
+                            <option value="{{ user['id'] }}">{{ user['character_name'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ship_name" class="form-label">Ship Name</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                               id="ship_name" name="ship_name" placeholder="e.g. Rattlesnake" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="goal_price" class="form-label">Goal Price (ISK)</label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                               id="goal_price" name="goal_price" step="0.01" min="0.01"
+                               placeholder="e.g. 500000000" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control bg-dark text-light border-secondary"
+                                  id="notes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">Create Goal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

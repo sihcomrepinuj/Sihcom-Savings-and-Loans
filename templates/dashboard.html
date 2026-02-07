@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Sihcom S&amp;L{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Savings Goals</h2>
+    <a href="{{ url_for('catalog') }}" class="btn btn-outline-success btn-sm">Browse Ships</a>
+</div>
+
+{% if orders %}
+<div class="row">
+    {% for order in orders %}
+    {% set bal = balances.get(order['id']) %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card bg-secondary bg-opacity-25 border-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ order['ship_name'] }}</h5>
+                <span class="badge
+                    {% if order['status'] == 'pending_approval' %}bg-warning text-dark
+                    {% elif order['status'] == 'active' %}bg-success
+                    {% elif order['status'] == 'completed' %}bg-primary
+                    {% elif order['status'] == 'withdrawal_pending' %}bg-warning text-dark
+                    {% elif order['status'] == 'withdrawn' %}bg-info
+                    {% else %}bg-secondary{% endif %}
+                    mb-2">
+                    {{ order['status'] | replace('_', ' ') | title }}
+                </span>
+
+                <div class="mb-2">
+                    <small class="text-secondary">Goal</small><br>
+                    <strong>{{ order['goal_price'] | isk }}</strong>
+                </div>
+
+                {% if bal %}
+                <div class="mb-2">
+                    <small class="text-secondary">Savings Balance</small><br>
+                    <strong>{{ bal['total_balance'] | isk }}</strong>
+                    {% if bal['pending_interest'] > 0 %}
+                    <small class="text-success">(incl. ~{{ bal['pending_interest'] | isk }} pending interest)</small>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <small class="text-secondary">Remaining</small><br>
+                    <strong>{{ bal['remaining'] | isk }}</strong>
+                </div>
+
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar
+                        {% if bal['progress'] >= 100 %}bg-primary
+                        {% elif bal['progress'] >= 50 %}bg-success
+                        {% else %}bg-info{% endif %}"
+                        role="progressbar"
+                        style="width: {{ bal['progress'] }}%"
+                        aria-valuenow="{{ bal['progress'] }}"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{ "%.1f" | format(bal['progress']) }}%
+                    </div>
+                </div>
+                {% elif order['status'] == 'pending_approval' %}
+                <div class="mb-3">
+                    <p class="text-warning mb-0">Awaiting admin approval...</p>
+                </div>
+                {% endif %}
+
+                {% if order['status'] not in ('pending_approval',) %}
+                <a href="{{ url_for('order_detail', order_id=order['id']) }}" class="btn btn-outline-light btn-sm">
+                    View Details
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center mt-5 text-secondary">
+    <p class="lead">No savings goals yet.</p>
+    <a href="{{ url_for('catalog') }}" class="btn btn-success">Browse Available Ships</a>
+</div>
+{% endif %}
+{% endblock %}

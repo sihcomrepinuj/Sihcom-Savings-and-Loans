@@ -1,0 +1,34 @@
+/* Sihcom Savings & Loans - Custom styles */
+
+.breadcrumb {
+    background: transparent;
+}
+
+.breadcrumb-item a {
+    color: #6ea8fe;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: #9ec5fe;
+}
+
+.breadcrumb-item.active {
+    color: #adb5bd;
+}
+
+.card {
+    transition: border-color 0.2s;
+}
+
+.progress {
+    background-color: #495057;
+}
+
+.table-dark {
+    --bs-table-bg: transparent;
+}
+
+.form-text {
+    font-size: 0.8rem;
+}

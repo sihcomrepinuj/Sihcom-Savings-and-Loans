@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Unmatched Transactions - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+        <li class="breadcrumb-item active">Unmatched Transactions</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">Unmatched Wallet Transactions</h2>
+<p class="text-secondary">
+    These are ISK transfers received by the bank character that could not be automatically
+    matched to a member's active savings goal. Assign them to an order or ignore them.
+</p>
+
+{% if entries %}
+<div class="table-responsive">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Sender</th>
+                <th>Amount</th>
+                <th>Reason</th>
+                <th>Assign To</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry['journal_date'][:10] }}</td>
+                <td>{{ entry['sender_name'] }}</td>
+                <td>{{ entry['amount'] | isk }}</td>
+                <td>{{ entry['reason'] or '-' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_assign_unmatched', journal_id=entry['journal_id']) }}"
+                          class="d-flex gap-2" id="assign-{{ entry['journal_id'] }}">
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                name="order_id" style="min-width: 200px;">
+                            <option value="">Select order...</option>
+                            {% for order in orders %}
+                            <option value="{{ order['id'] }}">
+                                #{{ order['id'] }} - {{ order['character_name'] }} - {{ order['ship_name'] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Assign</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin_ignore_unmatched', journal_id=entry['journal_id']) }}"
+                          class="d-inline"
+                          onsubmit="return confirm('Ignore this transaction?');">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center mt-5 text-secondary">
+    <p class="lead">No unmatched transactions. All clear!</p>
+</div>
+{% endif %}
+{% endblock %}

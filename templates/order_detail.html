@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}{{ order['ship_name'] }} - Sihcom S&amp;L{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">{{ order['ship_name'] }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ order['ship_name'] }}</h4>
+                <span class="badge
+                    {% if order['status'] == 'pending_approval' %}bg-warning text-dark
+                    {% elif order['status'] == 'active' %}bg-success
+                    {% elif order['status'] == 'completed' %}bg-primary
+                    {% elif order['status'] == 'withdrawal_pending' %}bg-warning text-dark
+                    {% elif order['status'] == 'withdrawn' %}bg-info
+                    {% else %}bg-secondary{% endif %}">
+                    {{ order['status'] | replace('_', ' ') | title }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Goal Price</small><br>
+                        <strong>{{ order['goal_price'] | isk }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Total Deposited</small><br>
+                        <strong>{{ order['amount_deposited'] | isk }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Interest Earned</small><br>
+                        <strong class="text-success">{{ order['interest_earned'] | isk }}</strong>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Savings Balance</small><br>
+                        <strong>{{ balance['total_balance'] | isk }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Remaining</small><br>
+                        <strong>{{ balance['remaining'] | isk }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-secondary">Started</small><br>
+                        {{ order['created_at'][:10] }}
+                    </div>
+                </div>
+
+                {% if balance['pending_interest'] > 0 %}
+                <div class="alert alert-info py-2 mb-3">
+                    ~{{ balance['pending_interest'] | isk }} estimated pending interest
+                    ({{ balance['periods_due'] }} period(s) awaiting accrual)
+                </div>
+                {% endif %}
+
+                <div class="progress mb-3" style="height: 24px;">
+                    <div class="progress-bar
+                        {% if balance['progress'] >= 100 %}bg-primary
+                        {% elif balance['progress'] >= 50 %}bg-success
+                        {% else %}bg-info{% endif %}"
+                        role="progressbar"
+                        style="width: {{ balance['progress'] }}%"
+                        aria-valuenow="{{ balance['progress'] }}"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{ "%.1f" | format(balance['progress']) }}%
+                    </div>
+                </div>
+
+                {% if order['notes'] %}
+                <div class="mt-2">
+                    <small class="text-secondary">Notes:</small>
+                    <p>{{ order['notes'] }}</p>
+                </div>
+                {% endif %}
+
+                {% if order['status'] == 'active' and not session.get('is_admin') %}
+                <form method="POST" action="{{ url_for('request_withdrawal', order_id=order['id']) }}"
+                      onsubmit="return confirm('Are you sure you want to request a full withdrawal? This will cancel your savings goal once approved.');">
+                    <button type="submit" class="btn btn-outline-warning btn-sm mt-2">Request Withdrawal</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Deposit History -->
+        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Deposit History</h5>
+            </div>
+            <div class="card-body">
+                {% if deposits %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Source</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dep in deposits %}
+                            <tr>
+                                <td>{{ dep['deposit_date'][:10] }}</td>
+                                <td>{{ dep['amount'] | isk }}</td>
+                                <td>
+                                    {% if dep['source'] == 'wallet' %}
+                                    <span class="badge bg-primary">Wallet</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Manual</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ dep['note'] or '' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">No deposits yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Interest History -->
+        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Interest History</h5>
+            </div>
+            <div class="card-body">
+                {% if interest_logs %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Interest Earned</th>
+                                <th>Balance Before</th>
+                                <th>Balance After</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in interest_logs %}
+                            <tr>
+                                <td>{{ log['accrued_at'][:10] }}</td>
+                                <td class="text-success">+{{ log['amount'] | isk }}</td>
+                                <td>{{ log['balance_before'] | isk }}</td>
+                                <td>{{ log['balance_after'] | isk }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">No interest accrued yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card bg-secondary bg-opacity-25 border-secondary">
+            <div class="card-header">
+                <h5 class="mb-0">Summary</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <small class="text-secondary">Ship</small><br>
+                        {{ order['ship_name'] }}
+                    </li>
+                    <li class="mb-2">
+                        <small class="text-secondary">Owner</small><br>
+                        {{ owner['character_name'] }}
+                    </li>
+                    <li class="mb-2">
+                        <small class="text-secondary">Goal</small><br>
+                        {{ order['goal_price'] | isk }}
+                    </li>
+                    <li class="mb-2">
+                        <small class="text-secondary">Deposited</small><br>
+                        {{ order['amount_deposited'] | isk }}
+                    </li>
+                    <li class="mb-2">
+                        <small class="text-secondary">Interest Earned</small><br>
+                        <span class="text-success">{{ order['interest_earned'] | isk }}</span>
+                    </li>
+                    <li class="mb-2">
+                        <small class="text-secondary">Progress</small><br>
+                        {{ "%.1f" | format(balance['progress']) }}%
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

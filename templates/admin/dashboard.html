@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Admin - Sihcom S&amp;L{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Admin Dashboard</h2>
+    <div>
+        <a href="{{ url_for('admin_create_order') }}" class="btn btn-success btn-sm me-2">New Savings Goal</a>
+        <form method="POST" action="{{ url_for('admin_sync_wallet') }}" class="d-inline me-2">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Sync Wallet</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin_accrue_all') }}" class="d-inline"
+              onsubmit="return confirm('Accrue interest on all active orders?');">
+            <button type="submit" class="btn btn-outline-info btn-sm">Accrue All Interest</button>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Active Goals</small>
+            <h4>{{ stats['active_count'] }}</h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Total Deposited</small>
+            <h4>{{ stats['total_deposited'] | isk }}</h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Interest Paid</small>
+            <h4 class="text-success">{{ stats['total_interest'] | isk }}</h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Pending Approvals</small>
+            <h4 class="{% if stats['pending_approval_count'] > 0 %}text-warning{% endif %}">
+                {{ stats['pending_approval_count'] }}
+            </h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Withdrawals</small>
+            <h4 class="{% if stats['withdrawal_count'] > 0 %}text-warning{% endif %}">
+                {{ stats['withdrawal_count'] }}
+            </h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
+            <small class="text-secondary">Unmatched Txns</small>
+            <h4 class="{% if stats['unmatched_count'] > 0 %}text-danger{% endif %}">
+                {% if stats['unmatched_count'] > 0 %}
+                <a href="{{ url_for('admin_unmatched') }}" class="text-danger text-decoration-none">
+                    {{ stats['unmatched_count'] }}
+                </a>
+                {% else %}
+                0
+                {% endif %}
+            </h4>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Approvals -->
+{% if pending_approvals %}
+<div class="card bg-info bg-opacity-10 border-info mb-4">
+    <div class="card-header bg-info bg-opacity-25">
+        <h5 class="mb-0">Pending Goal Approvals</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-sm">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Ship</th>
+                        <th>Goal Price</th>
+                        <th>Requested</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in pending_approvals %}
+                    <tr>
+                        <td>{{ order['character_name'] }}</td>
+                        <td>{{ order['ship_name'] }}</td>
+                        <td>{{ order['goal_price'] | isk }}</td>
+                        <td>{{ order['created_at'][:10] }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_approve_order', order_id=order['id']) }}" class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_reject_order', order_id=order['id']) }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm"
+                                        onclick="return confirm('Reject this savings goal request?');">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Withdrawal Requests -->
+{% if withdrawal_requests %}
+<div class="card bg-warning bg-opacity-10 border-warning mb-4">
+    <div class="card-header bg-warning bg-opacity-25 text-dark">
+        <h5 class="mb-0">Pending Withdrawal Requests</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-sm">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Ship</th>
+                        <th>Savings Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in withdrawal_requests %}
+                    {% set bal = balances.get(order['id'], {}) %}
+                    <tr>
+                        <td>{{ order['character_name'] }}</td>
+                        <td>{{ order['ship_name'] }}</td>
+                        <td>{{ bal.get('savings_balance', 0) | isk }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_approve_withdrawal', order_id=order['id']) }}" class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm"
+                                        onclick="return confirm('Approve withdrawal?');">
+                                    Approve
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_deny_withdrawal', order_id=order['id']) }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Deny</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- All Orders -->
+<div class="card bg-secondary bg-opacity-25 border-secondary">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Savings Goals</h5>
+        <small class="text-secondary">
+            Interest Rate: {{ "%.1f" | format(settings['interest_rate'] * 100) }}% {{ settings['interest_period'] }}
+        </small>
+    </div>
+    <div class="card-body">
+        {% if orders %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Ship</th>
+                        <th>Goal</th>
+                        <th>Deposited</th>
+                        <th>Interest</th>
+                        <th>Balance</th>
+                        <th>Progress</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    {% set bal = balances.get(order['id']) %}
+                    <tr>
+                        <td>{{ order['character_name'] }}</td>
+                        <td>{{ order['ship_name'] }}</td>
+                        <td>{{ order['goal_price'] | isk }}</td>
+                        <td>{{ order['amount_deposited'] | isk }}</td>
+                        <td class="text-success">{{ order['interest_earned'] | isk }}</td>
+                        <td>{{ bal['total_balance'] | isk if bal else '-' }}</td>
+                        <td>
+                            {% if bal %}
+                            <div class="progress" style="height: 16px; min-width: 80px;">
+                                <div class="progress-bar
+                                    {% if bal['progress'] >= 100 %}bg-primary
+                                    {% elif bal['progress'] >= 50 %}bg-success
+                                    {% else %}bg-info{% endif %}"
+                                    style="width: {{ bal['progress'] }}%">
+                                    {{ "%.0f" | format(bal['progress']) }}%
+                                </div>
+                            </div>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge
+                                {% if order['status'] == 'pending_approval' %}bg-warning text-dark
+                                {% elif order['status'] == 'active' %}bg-success
+                                {% elif order['status'] == 'completed' %}bg-primary
+                                {% elif order['status'] == 'withdrawal_pending' %}bg-warning text-dark
+                                {% elif order['status'] == 'withdrawn' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ order['status'] | replace('_', ' ') | title }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_order_detail', order_id=order['id']) }}"
+                               class="btn btn-outline-light btn-sm">Manage</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">No savings goals yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

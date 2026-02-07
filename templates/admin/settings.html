@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Settings - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+        <li class="breadcrumb-item active">Settings</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-5">
+        <div class="card bg-secondary bg-opacity-25 border-secondary">
+            <div class="card-header">
+                <h4 class="mb-0">Global Interest Settings</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="interest_rate" class="form-label">Interest Rate</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                                   id="interest_rate" name="interest_rate"
+                                   step="0.001" min="0" max="1"
+                                   value="{{ settings['interest_rate'] }}" required>
+                            <span class="input-group-text bg-dark text-light border-secondary">
+                                ({{ "%.1f" | format(settings['interest_rate'] * 100) }}%)
+                            </span>
+                        </div>
+                        <div class="form-text text-secondary">
+                            Enter as a decimal. E.g., 0.05 = 5%, 0.10 = 10%
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="interest_period" class="form-label">Interest Period</label>
+                        <select class="form-select bg-dark text-light border-secondary"
+                                id="interest_period" name="interest_period" required>
+                            <option value="weekly" {% if settings['interest_period'] == 'weekly' %}selected{% endif %}>
+                                Weekly (every 7 days)
+                            </option>
+                            <option value="biweekly" {% if settings['interest_period'] == 'biweekly' %}selected{% endif %}>
+                                Biweekly (every 14 days)
+                            </option>
+                            <option value="monthly" {% if settings['interest_period'] == 'monthly' %}selected{% endif %}>
+                                Monthly (every 30 days)
+                            </option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Save Settings</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">How Interest Works</h5>
+            </div>
+            <div class="card-body text-secondary">
+                <p>Interest compounds on each member's savings balance (deposits + previously earned interest) every period.</p>
+                <p class="mb-0">
+                    <strong>Example:</strong> At 5% monthly, a member with 1,000,000,000 ISK in savings
+                    earns 50,000,000 ISK after the first month, then 52,500,000 ISK the next month
+                    (5% of 1,050,000,000).
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
