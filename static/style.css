@@ -32,3 +32,10 @@
 .form-text {
     font-size: 0.8rem;
 }
+
+.form-label,
+.card-header h5,
+.card-header,
+.form-check-label {
+    color: #fff;
+}
