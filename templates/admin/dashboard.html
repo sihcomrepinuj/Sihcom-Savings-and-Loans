@@ -20,42 +20,42 @@
 <div class="row mb-4">
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Active Goals</small>
-            <h4>{{ stats['active_count'] }}</h4>
+            <small class="text-light">Active Goals</small>
+            <h4 class="text-white">{{ stats['active_count'] }}</h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Total Deposited</small>
-            <h4>{{ stats['total_deposited'] | isk }}</h4>
+            <small class="text-light">Total Deposited</small>
+            <h4 class="text-white">{{ stats['total_deposited'] | isk }}</h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Interest Paid</small>
+            <small class="text-light">Interest Paid</small>
             <h4 class="text-success">{{ stats['total_interest'] | isk }}</h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Pending Approvals</small>
-            <h4 class="{% if stats['pending_approval_count'] > 0 %}text-warning{% endif %}">
+            <small class="text-light">Pending Approvals</small>
+            <h4 class="{% if stats['pending_approval_count'] > 0 %}text-warning{% else %}text-white{% endif %}">
                 {{ stats['pending_approval_count'] }}
             </h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Withdrawals</small>
-            <h4 class="{% if stats['withdrawal_count'] > 0 %}text-warning{% endif %}">
+            <small class="text-light">Withdrawals</small>
+            <h4 class="{% if stats['withdrawal_count'] > 0 %}text-warning{% else %}text-white{% endif %}">
                 {{ stats['withdrawal_count'] }}
             </h4>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-3">
-            <small class="text-secondary">Unmatched Txns</small>
-            <h4 class="{% if stats['unmatched_count'] > 0 %}text-danger{% endif %}">
+            <small class="text-light">Unmatched Txns</small>
+            <h4 class="{% if stats['unmatched_count'] > 0 %}text-danger{% else %}text-white{% endif %}">
                 {% if stats['unmatched_count'] > 0 %}
                 <a href="{{ url_for('admin_unmatched') }}" class="text-danger text-decoration-none">
                     {{ stats['unmatched_count'] }}
@@ -114,7 +114,7 @@
 <!-- Withdrawal Requests -->
 {% if withdrawal_requests %}
 <div class="card bg-warning bg-opacity-10 border-warning mb-4">
-    <div class="card-header bg-warning bg-opacity-25 text-dark">
+    <div class="card-header bg-warning bg-opacity-25">
         <h5 class="mb-0">Pending Withdrawal Requests</h5>
     </div>
     <div class="card-body">
@@ -159,7 +159,7 @@
 <div class="card bg-secondary bg-opacity-25 border-secondary">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">All Savings Goals</h5>
-        <small class="text-secondary">
+        <small class="text-light">
             Interest Rate: {{ "%.1f" | format(settings['interest_rate'] * 100) }}% {{ settings['interest_period'] }}
         </small>
     </div>
