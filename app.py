@@ -18,6 +18,15 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
 
+# Production settings: trust Railway's proxy headers, secure cookies
+import os
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
+
 # --- Database lifecycle ---
 app.teardown_appcontext(database.close_db)
 
