@@ -1,5 +1,4 @@
 sihcom.db
-config.py
 __pycache__/
 *.pyc
 venv/
