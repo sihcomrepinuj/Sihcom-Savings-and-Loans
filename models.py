@@ -68,13 +68,22 @@ def get_admin_user():
 def get_available_catalog():
     db = database.get_db()
     return db.execute(
-        'SELECT * FROM ship_catalog WHERE is_available = 1 ORDER BY ship_name'
+        'SELECT * FROM ship_catalog WHERE is_available = 1 ORDER BY category, ship_name'
     ).fetchall()
 
 
 def get_all_catalog():
     db = database.get_db()
-    return db.execute('SELECT * FROM ship_catalog ORDER BY ship_name').fetchall()
+    return db.execute('SELECT * FROM ship_catalog ORDER BY category, ship_name').fetchall()
+
+
+def get_catalog_categories():
+    """Return distinct category names from the catalog."""
+    db = database.get_db()
+    rows = db.execute(
+        'SELECT DISTINCT category FROM ship_catalog ORDER BY category'
+    ).fetchall()
+    return [r['category'] for r in rows]
 
 
 def get_catalog_ship(ship_id):
@@ -82,21 +91,21 @@ def get_catalog_ship(ship_id):
     return db.execute('SELECT * FROM ship_catalog WHERE id = ?', (ship_id,)).fetchone()
 
 
-def add_catalog_ship(ship_name, price, description=None, type_id=None):
+def add_catalog_ship(ship_name, price, description=None, type_id=None, category='Uncategorized'):
     db = database.get_db()
     db.execute(
-        'INSERT INTO ship_catalog (ship_name, price, description, type_id) VALUES (?, ?, ?, ?)',
-        (ship_name, price, description, type_id)
+        'INSERT INTO ship_catalog (ship_name, price, description, type_id, category) VALUES (?, ?, ?, ?, ?)',
+        (ship_name, price, description, type_id, category)
     )
     db.commit()
 
 
-def update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=None):
+def update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=None, category='Uncategorized'):
     db = database.get_db()
     db.execute(
-        'UPDATE ship_catalog SET ship_name = ?, price = ?, description = ?, is_available = ?, type_id = ? '
+        'UPDATE ship_catalog SET ship_name = ?, price = ?, description = ?, is_available = ?, type_id = ?, category = ? '
         'WHERE id = ?',
-        (ship_name, price, description, is_available, type_id, ship_id)
+        (ship_name, price, description, is_available, type_id, category, ship_id)
     )
     db.commit()
 

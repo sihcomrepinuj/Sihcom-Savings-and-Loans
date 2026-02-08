@@ -19,18 +19,29 @@
     <div class="card-body">
         <form method="POST" action="{{ url_for('admin_catalog_add') }}">
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="ship_name" class="form-label">Ship Name</label>
                     <input type="text" class="form-control bg-dark text-light border-secondary"
-                           id="ship_name" name="ship_name" placeholder="e.g. Rattlesnake" required>
+                           id="ship_name" name="ship_name" placeholder="e.g. Ragnarok" required>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="price" class="form-label">Price (ISK)</label>
                     <input type="number" class="form-control bg-dark text-light border-secondary"
                            id="price" name="price" step="0.01" min="0.01"
                            placeholder="e.g. 500000000" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label for="category" class="form-label">Category</label>
+                    <input type="text" class="form-control bg-dark text-light border-secondary"
+                           id="category" name="category" list="category-list"
+                           placeholder="e.g. Titans">
+                    <datalist id="category-list">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="col-md-3">
                     <label for="description" class="form-label">Description (optional)</label>
                     <input type="text" class="form-control bg-dark text-light border-secondary"
                            id="description" name="description" placeholder="Short description">
@@ -57,13 +68,22 @@
                         <th>Image</th>
                         <th>Ship Name</th>
                         <th>Price</th>
+                        <th>Category</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% set current_category = namespace(value='') %}
                     {% for ship in ships %}
+                    {% set cat = ship['category'] or 'Uncategorized' %}
+                    {% if cat != current_category.value %}
+                    {% set current_category.value = cat %}
+                    <tr class="table-active">
+                        <td colspan="7" class="fw-bold text-info py-2">{{ cat }}</td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <form method="POST" action="{{ url_for('admin_catalog_edit', ship_id=ship['id']) }}">
                         <td>
@@ -80,6 +100,11 @@
                         <td>
                             <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
                                    name="price" value="{{ ship['price'] }}" step="0.01" min="0.01" required>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   name="category" value="{{ ship['category'] or 'Uncategorized' }}"
+                                   list="category-list-edit">
                         </td>
                         <td>
                             <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
@@ -113,6 +138,11 @@
                 </tbody>
             </table>
         </div>
+        <datalist id="category-list-edit">
+            {% for cat in categories %}
+            <option value="{{ cat }}">
+            {% endfor %}
+        </datalist>
         {% else %}
         <p class="text-secondary mb-0">No ships in catalog. Add one above!</p>
         {% endif %}

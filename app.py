@@ -205,7 +205,13 @@ def dashboard():
 def catalog():
     ships = models.get_available_catalog()
     has_active = models.user_has_active_or_pending_order(session['user_id'])
-    return render_template('catalog.html', ships=ships, has_active=has_active)
+    # Group ships by category for display
+    from collections import OrderedDict
+    ships_by_category = OrderedDict()
+    for ship in ships:
+        cat = ship['category'] or 'Uncategorized'
+        ships_by_category.setdefault(cat, []).append(ship)
+    return render_template('catalog.html', ships_by_category=ships_by_category, has_active=has_active)
 
 
 @app.route('/catalog/<int:ship_id>/request', methods=['POST'])
@@ -328,7 +334,8 @@ def admin_users():
 @admin_required
 def admin_catalog():
     ships = models.get_all_catalog()
-    return render_template('admin/catalog.html', ships=ships)
+    categories = models.get_catalog_categories()
+    return render_template('admin/catalog.html', ships=ships, categories=categories)
 
 
 @app.route('/admin/catalog/add', methods=['POST'])
@@ -337,6 +344,7 @@ def admin_catalog_add():
     ship_name = request.form.get('ship_name', '').strip()
     price = request.form.get('price', type=float)
     description = request.form.get('description', '').strip() or None
+    category = request.form.get('category', '').strip() or 'Uncategorized'
 
     if not ship_name or not price or price <= 0:
         flash('Please provide a valid ship name and price.', 'danger')
@@ -347,7 +355,7 @@ def admin_catalog_add():
     if not type_id:
         flash(f'Could not find "{ship_name}" in EVE database. Ship added without image.', 'warning')
 
-    models.add_catalog_ship(ship_name, price, description, type_id=type_id)
+    models.add_catalog_ship(ship_name, price, description, type_id=type_id, category=category)
     flash(f'{ship_name} added to catalog.', 'success')
     return redirect(url_for('admin_catalog'))
 
@@ -363,6 +371,7 @@ def admin_catalog_edit(ship_id):
     price = request.form.get('price', type=float)
     description = request.form.get('description', '').strip() or None
     is_available = 1 if request.form.get('is_available') else 0
+    category = request.form.get('category', '').strip() or 'Uncategorized'
 
     if not ship_name or not price or price <= 0:
         flash('Please provide a valid ship name and price.', 'danger')
@@ -375,7 +384,7 @@ def admin_catalog_edit(ship_id):
         if not type_id:
             flash(f'Could not find "{ship_name}" in EVE database. Image removed.', 'warning')
 
-    models.update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=type_id)
+    models.update_catalog_ship(ship_id, ship_name, price, description, is_available, type_id=type_id, category=category)
     flash(f'{ship_name} updated.', 'success')
     return redirect(url_for('admin_catalog'))
 
@@ -401,7 +410,8 @@ def admin_catalog_refresh_image(ship_id):
     if type_id:
         models.update_catalog_ship(
             ship_id, ship['ship_name'], ship['price'],
-            ship['description'], ship['is_available'], type_id=type_id
+            ship['description'], ship['is_available'], type_id=type_id,
+            category=ship['category'] or 'Uncategorized'
         )
         flash(f'Image found for {ship["ship_name"]}!', 'success')
     else:

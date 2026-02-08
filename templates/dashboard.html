@@ -48,7 +48,7 @@
                     <strong>{{ bal['remaining'] | isk }}</strong>
                 </div>
 
-                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress mb-2" style="height: 20px;">
                     <div class="progress-bar
                         {% if bal['progress'] >= 100 %}bg-primary
                         {% elif bal['progress'] >= 50 %}bg-success
@@ -60,6 +60,9 @@
                         {{ "%.1f" | format(bal['progress']) }}%
                     </div>
                 </div>
+                {% if bal['eligible_balance'] is defined and bal['eligible_balance'] < bal['savings_balance'] %}
+                <small class="text-secondary">New deposits earn interest after 30 days</small>
+                {% endif %}
                 {% elif order['status'] == 'pending_approval' %}
                 <div class="mb-3">
                     <p class="text-warning mb-0">Awaiting admin approval...</p>

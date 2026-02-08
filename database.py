@@ -134,6 +134,9 @@ def init_db():
     _try_alter(db, "ALTER TABLE ship_catalog ADD COLUMN type_id INTEGER")
     _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN type_id INTEGER")
 
+    # Add category to ship_catalog for organizing ships (Titans, Supers, etc.)
+    _try_alter(db, "ALTER TABLE ship_catalog ADD COLUMN category TEXT DEFAULT 'Uncategorized'")
+
     for key, value in DEFAULT_SETTINGS.items():
         db.execute(
             'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',

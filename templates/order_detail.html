@@ -55,6 +55,13 @@
                     </div>
                 </div>
 
+                {% if balance['eligible_balance'] is defined and balance['eligible_balance'] < balance['savings_balance'] %}
+                <div class="alert alert-secondary py-2 mb-3">
+                    <small>Earning interest on <strong>{{ balance['eligible_balance'] | isk }}</strong>
+                    &mdash; new deposits earn interest after 30 days.</small>
+                </div>
+                {% endif %}
+
                 {% if balance['pending_interest'] > 0 %}
                 <div class="alert alert-info py-2 mb-3">
                     ~{{ balance['pending_interest'] | isk }} estimated pending interest

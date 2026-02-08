@@ -11,7 +11,9 @@
 </div>
 {% endif %}
 
-{% if ships %}
+{% if ships_by_category %}
+{% for category, ships in ships_by_category.items() %}
+<h4 class="text-light mt-4 mb-3">{{ category }}</h4>
 <div class="row">
     {% for ship in ships %}
     <div class="col-md-6 col-lg-4 mb-4">
@@ -41,6 +43,7 @@
     </div>
     {% endfor %}
 </div>
+{% endfor %}
 {% else %}
 <div class="text-center mt-5 text-secondary">
     <p class="lead">No ships available right now. Check back later!</p>
