@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>My Savings Goals</h2>
+    <h2 class="text-white">My Savings Goals</h2>
     <a href="{{ url_for('catalog') }}" class="btn btn-outline-success btn-sm">Browse Ships</a>
 </div>
 
@@ -31,21 +31,21 @@
                 </span>
 
                 <div class="mb-2">
-                    <small class="text-secondary">Goal</small><br>
-                    <strong>{{ order['goal_price'] | isk }}</strong>
+                    <small class="text-light">Goal</small><br>
+                    <strong class="text-white">{{ order['goal_price'] | isk }}</strong>
                 </div>
 
                 {% if bal %}
                 <div class="mb-2">
-                    <small class="text-secondary">Savings Balance</small><br>
-                    <strong>{{ bal['total_balance'] | isk }}</strong>
+                    <small class="text-light">Savings Balance</small><br>
+                    <strong class="text-white">{{ bal['total_balance'] | isk }}</strong>
                     {% if bal['pending_interest'] > 0 %}
-                    <small class="text-success">(incl. ~{{ bal['pending_interest'] | isk }} pending interest)</small>
+                    <small class="text-success">(incl. ~{{ bal['pending_interest'] | isk }} pending)</small>
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <small class="text-secondary">Remaining</small><br>
-                    <strong>{{ bal['remaining'] | isk }}</strong>
+                    <small class="text-light">Remaining</small><br>
+                    <strong class="text-white">{{ bal['remaining'] | isk }}</strong>
                 </div>
 
                 <div class="progress mb-2" style="height: 20px;">
@@ -67,6 +67,10 @@
                 <div class="mb-3">
                     <p class="text-warning mb-0">Awaiting admin approval...</p>
                 </div>
+                {% elif order['status'] == 'active' and order['amount_deposited'] == 0 %}
+                <div class="mb-3">
+                    <p class="text-info mb-0">Goal approved! Send ISK to <strong class="text-white">Bernie May Doff</strong> in-game to start saving.</p>
+                </div>
                 {% endif %}
 
                 {% if order['status'] not in ('pending_approval',) %}
@@ -78,6 +82,23 @@
         </div>
     </div>
     {% endfor %}
+</div>
+
+<!-- How to Deposit - always accessible -->
+<div class="card bg-secondary bg-opacity-25 border-secondary mt-2 mb-4">
+    <div class="card-body">
+        <a class="text-info text-decoration-none" data-bs-toggle="collapse" href="#depositHelp" role="button" aria-expanded="false">
+            How do I make a deposit? <small class="text-secondary">(click to expand)</small>
+        </a>
+        <div class="collapse mt-3" id="depositHelp">
+            <ol class="text-light mb-0">
+                <li>Open EVE Online and send ISK to <strong class="text-white">Bernie May Doff</strong></li>
+                <li>In the <em>Reason</em> field, include your character name so the admin can match it</li>
+                <li>The admin will sync the wallet and your deposit will appear here automatically</li>
+                <li>If it doesn't appear within a day, contact the admin &mdash; they can also record deposits manually</li>
+            </ol>
+        </div>
+    </div>
 </div>
 {% else %}
 <div class="text-center mt-5 text-secondary">

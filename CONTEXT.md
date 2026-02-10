@@ -29,19 +29,20 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 ### Core Python
 - **config.py** - Config class reading from env vars (SECRET_KEY, EVE_CLIENT_ID, EVE_CLIENT_SECRET, EVE_CALLBACK_URL, ADMIN_CHARACTER_ID, DATA_DIR)
 - **database.py** - SQLite schema (7 tables: users, ship_catalog, ship_orders, deposits, interest_log, wallet_journal, settings), Flask g-based connections, Row factory, migration via `_try_alter()`
-- **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`
+- **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`, `get_leaderboard()`
 - **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`, `_get_eligible_deposits()`. Uses PERIOD_DAYS dict. Interest accrues only on deposits older than 30 days (eligible balance).
 - **wallet.py** - ESI wallet sync: `_get_bank_preston()`, `fetch_wallet_journal()`, `sync_wallet()`. Filters for `player_donation` with `amount > 0`, deduplicates via journal_id, auto-matches to users with active orders
 - **esi.py** - Public ESI helper: `search_type_id()` for ship name→type_id lookup, `get_ship_image_url()` for EVE image server URLs
 - **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, `isk_short` and `ship_image` template filters, logging on callback
 
 ### Templates (all in templates/)
-- **base.html** - Bootstrap 5 dark theme, nav with Ship Catalog link and Admin dropdown
+- **base.html** - Bootstrap 5 dark theme, nav with Ship Catalog, Leaderboard links and Admin dropdown
 - **index.html** - Landing page with EVE SSO login button
 - **error.html** - 403/404 error pages
-- **dashboard.html** - Member dashboard showing goals with progress bars
+- **dashboard.html** - Member dashboard showing goals with progress bars, deposit instructions, contrast-fixed
 - **catalog.html** - Member ship catalog browser grouped by category with "Start Saving" buttons
-- **order_detail.html** - Member order detail with deposit history and source badges
+- **order_detail.html** - Member order detail with deposit history, source badges, and "How to Deposit" sidebar card
+- **leaderboard.html** - Public leaderboard showing character names and progress bars only (no ship names, no amounts)
 - **admin/dashboard.html** - Admin dashboard with 6 stat cards, pending approvals, withdrawal requests, all orders table
 - **admin/catalog.html** - Admin catalog management with inline edit forms, category field, grouped by category
 - **admin/create_order.html** - Admin manual order creation
@@ -84,9 +85,9 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 1. **users** - id, character_id (unique), character_name, is_admin, refresh_token, created_at
 2. **ship_catalog** - id, ship_name, price, description, is_available, type_id, category, created_at
 3. **ship_orders** - id, user_id, ship_name, goal_price, amount_deposited, interest_earned, status, notes, type_id, created_at, updated_at
-4. **deposits** - id, order_id, amount, recorded_by_user_id, note, source (manual/wallet), journal_id, created_at
-5. **interest_log** - id, order_id, amount, rate_used, period_number, created_at
-6. **wallet_journal** - journal_id (PK, from ESI), character_id, character_name, sender_id, sender_name, amount, reason, date, status (unmatched/matched/ignored), matched_order_id
+4. **deposits** - id, order_id, amount, recorded_by, note, source (manual/wallet), journal_id, deposit_date, created_at
+5. **interest_log** - id, order_id, amount, balance_before, balance_after, accrued_at
+6. **wallet_journal** - journal_id (PK, from ESI), sender_id, sender_name, amount, reason, journal_date, order_id, status (unmatched/matched/ignored), created_at
 7. **settings** - key (PK), value
 
 ## Order Statuses

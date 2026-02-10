@@ -181,6 +181,32 @@ def get_active_orders():
     ).fetchall()
 
 
+def get_leaderboard():
+    """Return active savers with character_name and progress only.
+
+    No ship names, no ISK amounts — just name and percentage.
+    Sorted by progress descending.
+    """
+    db = database.get_db()
+    rows = db.execute(
+        'SELECT u.character_name, '
+        '  o.amount_deposited + o.interest_earned AS balance, '
+        '  o.goal_price '
+        'FROM ship_orders o '
+        'JOIN users u ON o.user_id = u.id '
+        "WHERE o.status = 'active' AND o.goal_price > 0 "
+        'ORDER BY (o.amount_deposited + o.interest_earned) * 1.0 / o.goal_price DESC'
+    ).fetchall()
+    result = []
+    for r in rows:
+        progress = min((r['balance'] / r['goal_price']) * 100, 100) if r['goal_price'] > 0 else 0
+        result.append({
+            'character_name': r['character_name'],
+            'progress': round(progress, 1),
+        })
+    return result
+
+
 def get_pending_approval_orders():
     db = database.get_db()
     return db.execute(

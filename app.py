@@ -278,6 +278,13 @@ def request_withdrawal(order_id):
     return redirect(url_for('order_detail', order_id=order_id))
 
 
+@app.route('/leaderboard')
+@login_required
+def leaderboard():
+    entries = models.get_leaderboard()
+    return render_template('leaderboard.html', entries=entries)
+
+
 # --- Admin routes ---
 
 @app.route('/admin')
@@ -479,7 +486,11 @@ def admin_approve_order(order_id):
 
     models.update_order_status(order_id, 'active')
     user = models.get_user_by_id(order['user_id'])
-    flash(f"Savings goal approved for {user['character_name']} - {order['ship_name']}.", 'success')
+    flash(
+        f"Savings goal approved for {user['character_name']} - {order['ship_name']}. "
+        f"They can now send ISK to Bernie May Doff to start saving.",
+        'success'
+    )
     return redirect(url_for('admin_dashboard'))
 
 

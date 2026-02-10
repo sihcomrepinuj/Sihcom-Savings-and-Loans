@@ -176,7 +176,7 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card bg-secondary bg-opacity-25 border-secondary">
+        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
             {% if order['type_id'] %}
             <img src="{{ order['type_id'] | ship_image }}" class="card-img-top p-3"
                  alt="{{ order['ship_name'] }}" style="height: 200px; object-fit: contain;">
@@ -188,19 +188,19 @@
                 <ul class="list-unstyled">
                     <li class="mb-2">
                         <small class="text-secondary">Ship</small><br>
-                        {{ order['ship_name'] }}
+                        <span class="text-white">{{ order['ship_name'] }}</span>
                     </li>
                     <li class="mb-2">
                         <small class="text-secondary">Owner</small><br>
-                        {{ owner['character_name'] }}
+                        <span class="text-white">{{ owner['character_name'] }}</span>
                     </li>
                     <li class="mb-2">
                         <small class="text-secondary">Goal</small><br>
-                        {{ order['goal_price'] | isk }}
+                        <span class="text-white">{{ order['goal_price'] | isk }}</span>
                     </li>
                     <li class="mb-2">
                         <small class="text-secondary">Deposited</small><br>
-                        {{ order['amount_deposited'] | isk }}
+                        <span class="text-white">{{ order['amount_deposited'] | isk }}</span>
                     </li>
                     <li class="mb-2">
                         <small class="text-secondary">Interest Earned</small><br>
@@ -208,11 +208,27 @@
                     </li>
                     <li class="mb-2">
                         <small class="text-secondary">Progress</small><br>
-                        {{ "%.1f" | format(balance['progress']) }}%
+                        <span class="text-white">{{ "%.1f" | format(balance['progress']) }}%</span>
                     </li>
                 </ul>
             </div>
         </div>
+
+        {% if order['status'] == 'active' and not session.get('is_admin') %}
+        <div class="card bg-secondary bg-opacity-25 border-info">
+            <div class="card-header border-info">
+                <h6 class="mb-0 text-info">How to Deposit</h6>
+            </div>
+            <div class="card-body">
+                <ol class="text-light small mb-0 ps-3">
+                    <li class="mb-1">Send ISK to <strong class="text-white">Bernie May Doff</strong> in EVE</li>
+                    <li class="mb-1">Include your character name in the <em>Reason</em> field</li>
+                    <li class="mb-1">The admin will sync the wallet and your deposit appears here</li>
+                    <li>If it doesn't show up within a day, contact the admin</li>
+                </ol>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

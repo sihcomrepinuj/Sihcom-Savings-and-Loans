@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard - Sihcom S&amp;L{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-white">Savings Leaderboard</h2>
+
+{% if entries %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-secondary bg-opacity-25 border-secondary">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Pilot</th>
+                                <th style="width: 55%;">Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in entries %}
+                            <tr>
+                                <td class="text-secondary">{{ loop.index }}</td>
+                                <td class="text-white fw-semibold">{{ entry['character_name'] }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 20px;">
+                                            <div class="progress-bar
+                                                {% if entry['progress'] >= 100 %}bg-primary
+                                                {% elif entry['progress'] >= 75 %}bg-success
+                                                {% elif entry['progress'] >= 50 %}bg-info
+                                                {% elif entry['progress'] >= 25 %}bg-warning
+                                                {% else %}bg-secondary{% endif %}"
+                                                role="progressbar"
+                                                style="width: {{ entry['progress'] }}%"
+                                                aria-valuenow="{{ entry['progress'] }}"
+                                                aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <span class="text-light" style="min-width: 50px; text-align: right;">
+                                            {{ entry['progress'] }}%
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <p class="text-secondary text-center mt-3">
+            <small>Showing all active savers, ranked by progress toward their goal.</small>
+        </p>
+    </div>
+</div>
+{% else %}
+<div class="text-center mt-5 text-secondary">
+    <p class="lead">No active savings goals yet. Be the first!</p>
+    <a href="{{ url_for('catalog') }}" class="btn btn-success">Browse Ships</a>
+</div>
+{% endif %}
+{% endblock %}
