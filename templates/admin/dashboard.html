@@ -159,9 +159,14 @@
 <div class="card bg-secondary bg-opacity-25 border-secondary">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">All Savings Goals</h5>
-        <small class="text-light">
-            Interest Rate: {{ "%.1f" | format(settings['interest_rate'] * 100) }}% {{ settings['interest_period'] }}
-        </small>
+        <div>
+            <button id="toggleClosed" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleClosedOrders()">
+                Show All
+            </button>
+            <small class="text-light">
+                Interest Rate: {{ "%.1f" | format(settings['interest_rate'] * 100) }}% {{ settings['interest_period'] }}
+            </small>
+        </div>
     </div>
     <div class="card-body">
         {% if orders %}
@@ -183,7 +188,8 @@
                 <tbody>
                     {% for order in orders %}
                     {% set bal = balances.get(order['id']) %}
-                    <tr>
+                    <tr class="{% if order['status'] in ('withdrawn', 'cancelled') %}order-closed{% endif %}"
+                        {% if order['status'] in ('withdrawn', 'cancelled') %}style="display: none;"{% endif %}>
                         <td>{{ order['character_name'] }}</td>
                         <td>{{ order['ship_name'] }}</td>
                         <td>{{ order['goal_price'] | isk }}</td>
@@ -230,4 +236,18 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+function toggleClosedOrders() {
+    var rows = document.querySelectorAll('.order-closed');
+    var btn = document.getElementById('toggleClosed');
+    var showing = btn.textContent.trim() === 'Show All';
+    rows.forEach(function(row) {
+        row.style.display = showing ? '' : 'none';
+    });
+    btn.textContent = showing ? 'Show Active' : 'Show All';
+    btn.classList.toggle('btn-outline-secondary', !showing);
+    btn.classList.toggle('btn-outline-light', showing);
+}
+</script>
 {% endblock %}
