@@ -27,37 +27,37 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-secondary">Goal Price</small><br>
-                        <strong>{{ order['goal_price'] | isk }}</strong>
+                        <small class="text-light">Goal Price</small><br>
+                        <strong class="text-white">{{ order['goal_price'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Total Deposited</small><br>
-                        <strong>{{ order['amount_deposited'] | isk }}</strong>
+                        <small class="text-light">Total Deposited</small><br>
+                        <strong class="text-white">{{ order['amount_deposited'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Interest Earned</small><br>
+                        <small class="text-light">Interest Earned</small><br>
                         <strong class="text-success">{{ order['interest_earned'] | isk }}</strong>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-secondary">Savings Balance</small><br>
-                        <strong>{{ balance['total_balance'] | isk }}</strong>
+                        <small class="text-light">Savings Balance</small><br>
+                        <strong class="text-white">{{ balance['total_balance'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Remaining</small><br>
-                        <strong>{{ balance['remaining'] | isk }}</strong>
+                        <small class="text-light">Remaining</small><br>
+                        <strong class="text-white">{{ balance['remaining'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Started</small><br>
-                        {{ order['created_at'][:10] }}
+                        <small class="text-light">Started</small><br>
+                        <span class="text-white">{{ order['created_at'][:10] }}</span>
                     </div>
                 </div>
 
                 {% if balance['eligible_balance'] is defined and balance['eligible_balance'] < balance['savings_balance'] %}
-                <div class="alert alert-secondary py-2 mb-3">
-                    <small>Earning interest on <strong>{{ balance['eligible_balance'] | isk }}</strong>
+                <div class="alert alert-dark border-secondary py-2 mb-3">
+                    <small class="text-light">Earning interest on <strong class="text-white">{{ balance['eligible_balance'] | isk }}</strong>
                     &mdash; new deposits earn interest after 30 days.</small>
                 </div>
                 {% endif %}
@@ -84,8 +84,8 @@
 
                 {% if order['notes'] %}
                 <div class="mt-2">
-                    <small class="text-secondary">Notes:</small>
-                    <p>{{ order['notes'] }}</p>
+                    <small class="text-light">Notes:</small>
+                    <p class="text-white">{{ order['notes'] }}</p>
                 </div>
                 {% endif %}
 
@@ -187,27 +187,27 @@
             <div class="card-body">
                 <ul class="list-unstyled">
                     <li class="mb-2">
-                        <small class="text-secondary">Ship</small><br>
+                        <small class="text-light">Ship</small><br>
                         <span class="text-white">{{ order['ship_name'] }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-secondary">Owner</small><br>
+                        <small class="text-light">Owner</small><br>
                         <span class="text-white">{{ owner['character_name'] }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-secondary">Goal</small><br>
+                        <small class="text-light">Goal</small><br>
                         <span class="text-white">{{ order['goal_price'] | isk }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-secondary">Deposited</small><br>
+                        <small class="text-light">Deposited</small><br>
                         <span class="text-white">{{ order['amount_deposited'] | isk }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-secondary">Interest Earned</small><br>
+                        <small class="text-light">Interest Earned</small><br>
                         <span class="text-success">{{ order['interest_earned'] | isk }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-secondary">Progress</small><br>
+                        <small class="text-light">Progress</small><br>
                         <span class="text-white">{{ "%.1f" | format(balance['progress']) }}%</span>
                     </li>
                 </ul>
