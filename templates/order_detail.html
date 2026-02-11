@@ -90,10 +90,25 @@
                 {% endif %}
 
                 {% if order['status'] == 'active' and not session.get('is_admin') %}
-                <form method="POST" action="{{ url_for('request_withdrawal', order_id=order['id']) }}"
-                      onsubmit="return confirm('Are you sure you want to request a full withdrawal? This will cancel your savings goal once approved.');">
-                    <button type="submit" class="btn btn-outline-warning btn-sm mt-2">Request Withdrawal</button>
-                </form>
+                <div class="d-flex gap-2 mt-2">
+                    <form method="POST" action="{{ url_for('request_withdrawal', order_id=order['id']) }}"
+                          onsubmit="return confirm('Are you sure you want to request a full withdrawal? This will cancel your savings goal once approved.');">
+                        <button type="submit" class="btn btn-outline-warning btn-sm">Request Withdrawal</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('toggle_order_public', order_id=order['id']) }}">
+                        {% if order['is_public'] %}
+                        <input type="hidden" name="is_public" value="0">
+                        <button type="submit" class="btn btn-outline-info btn-sm">
+                            &#x1F4E2; Ship visible on Leaderboard
+                        </button>
+                        {% else %}
+                        <input type="hidden" name="is_public" value="1">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            &#x1F512; Ship hidden on Leaderboard
+                        </button>
+                        {% endif %}
+                    </form>
+                </div>
                 {% endif %}
             </div>
         </div>

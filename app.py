@@ -278,6 +278,28 @@ def request_withdrawal(order_id):
     return redirect(url_for('order_detail', order_id=order_id))
 
 
+@app.route('/order/<int:order_id>/toggle-public', methods=['POST'])
+@login_required
+def toggle_order_public(order_id):
+    order = models.get_order(order_id)
+    if not order:
+        abort(404)
+    if order['user_id'] != session['user_id']:
+        abort(403)
+    if order['status'] != 'active':
+        flash('Only active savings goals can be toggled.', 'warning')
+        return redirect(url_for('order_detail', order_id=order_id))
+
+    is_public = request.form.get('is_public') == '1'
+    models.toggle_order_public(order_id, is_public)
+
+    if is_public:
+        flash('Your ship goal is now visible on the leaderboard.', 'info')
+    else:
+        flash('Your ship goal is now hidden from the leaderboard.', 'info')
+    return redirect(url_for('order_detail', order_id=order_id))
+
+
 @app.route('/leaderboard')
 @login_required
 def leaderboard():

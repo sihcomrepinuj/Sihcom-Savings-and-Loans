@@ -182,16 +182,16 @@ def get_active_orders():
 
 
 def get_leaderboard():
-    """Return active savers with character_name and progress only.
+    """Return active savers with character_name, progress, and public goal info.
 
-    No ship names, no ISK amounts — just name and percentage.
+    Ship name is included but only shown on leaderboard if is_public = 1.
     Sorted by progress descending.
     """
     db = database.get_db()
     rows = db.execute(
         'SELECT u.character_name, '
         '  o.amount_deposited + o.interest_earned AS balance, '
-        '  o.goal_price '
+        '  o.goal_price, o.ship_name, o.is_public '
         'FROM ship_orders o '
         'JOIN users u ON o.user_id = u.id '
         "WHERE o.status = 'active' AND o.goal_price > 0 "
@@ -203,8 +203,20 @@ def get_leaderboard():
         result.append({
             'character_name': r['character_name'],
             'progress': round(progress, 1),
+            'ship_name': r['ship_name'],
+            'is_public': r['is_public'],
         })
     return result
+
+
+def toggle_order_public(order_id, is_public):
+    """Toggle whether an order's ship name appears on the leaderboard."""
+    db = database.get_db()
+    db.execute(
+        "UPDATE ship_orders SET is_public = ?, updated_at = datetime('now') WHERE id = ?",
+        (1 if is_public else 0, order_id)
+    )
+    db.commit()
 
 
 def get_pending_approval_orders():

@@ -137,6 +137,9 @@ def init_db():
     # Add category to ship_catalog for organizing ships (Titans, Supers, etc.)
     _try_alter(db, "ALTER TABLE ship_catalog ADD COLUMN category TEXT DEFAULT 'Uncategorized'")
 
+    # Add is_public to ship_orders for leaderboard visibility toggle
+    _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN is_public INTEGER DEFAULT 0")
+
     for key, value in DEFAULT_SETTINGS.items():
         db.execute(
             'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
