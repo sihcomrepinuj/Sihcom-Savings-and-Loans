@@ -586,6 +586,33 @@ def admin_accrue_all():
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/order/<int:order_id>/edit', methods=['POST'])
+@admin_required
+def admin_edit_order(order_id):
+    order = models.get_order(order_id)
+    if not order:
+        abort(404)
+
+    ship_name = request.form.get('ship_name', '').strip()
+    goal_price = request.form.get('goal_price', type=float)
+    is_public = request.form.get('is_public') == '1'
+
+    if not ship_name or not goal_price or goal_price <= 0:
+        flash('Please provide a valid ship name and goal price.', 'danger')
+        return redirect(url_for('admin_order_detail', order_id=order_id))
+
+    # Re-lookup type_id if ship name changed
+    type_id = order['type_id']
+    if ship_name.lower() != order['ship_name'].lower():
+        type_id = esi.search_type_id(ship_name)
+        if not type_id:
+            flash(f'Could not find "{ship_name}" in EVE database. Image removed.', 'warning')
+
+    models.update_order_details(order_id, ship_name, goal_price, is_public, type_id=type_id)
+    flash(f'Order updated.', 'success')
+    return redirect(url_for('admin_order_detail', order_id=order_id))
+
+
 @app.route('/admin/order/<int:order_id>/cancel', methods=['POST'])
 @admin_required
 def admin_cancel_order(order_id):

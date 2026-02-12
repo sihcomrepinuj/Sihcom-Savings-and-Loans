@@ -251,6 +251,35 @@
         </div>
         {% endif %}
 
+        <!-- Edit Order -->
+        {% if order['status'] in ('active', 'withdrawal_pending') %}
+        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Order</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_edit_order', order_id=order['id']) }}">
+                    <div class="mb-3">
+                        <label for="ship_name" class="form-label">Ship Name</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                               id="ship_name" name="ship_name" value="{{ order['ship_name'] }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="goal_price" class="form-label">Goal Price (ISK)</label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                               id="goal_price" name="goal_price" value="{{ order['goal_price'] }}" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_public" name="is_public" value="1"
+                               {% if order['is_public'] %}checked{% endif %}>
+                        <label class="form-check-label" for="is_public">Show ship on Leaderboard</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-light w-100">Save Changes</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Cancel / Danger Zone -->
         {% if order['status'] in ('active', 'withdrawal_pending', 'pending_approval') %}
         <div class="card bg-danger bg-opacity-10 border-danger">

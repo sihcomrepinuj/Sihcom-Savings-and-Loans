@@ -73,6 +73,22 @@
                 </div>
                 {% endif %}
 
+                {% if order['status'] == 'active' %}
+                <form method="POST" action="{{ url_for('toggle_order_public', order_id=order['id']) }}" class="mb-2">
+                    {% if order['is_public'] %}
+                    <input type="hidden" name="is_public" value="0">
+                    <button type="submit" class="btn btn-outline-info btn-sm w-100">
+                        &#x1F4E2; Ship visible on Leaderboard
+                    </button>
+                    {% else %}
+                    <input type="hidden" name="is_public" value="1">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                        &#x1F512; Ship hidden on Leaderboard
+                    </button>
+                    {% endif %}
+                </form>
+                {% endif %}
+
                 {% if order['status'] not in ('pending_approval',) %}
                 <a href="{{ url_for('order_detail', order_id=order['id']) }}" class="btn btn-outline-light btn-sm">
                     View Details
