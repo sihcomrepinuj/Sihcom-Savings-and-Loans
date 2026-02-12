@@ -67,6 +67,15 @@ def ship_image_url(type_id, size=256):
     return esi.get_ship_image_url(type_id, size) if type_id else None
 
 
+# --- Context processors ---
+
+@app.context_processor
+def inject_notification_count():
+    if 'user_id' in session:
+        return {'unread_notification_count': models.get_unread_count(session['user_id'])}
+    return {'unread_notification_count': 0}
+
+
 # --- Auth decorators ---
 
 def login_required(f):
@@ -307,6 +316,14 @@ def leaderboard():
     return render_template('leaderboard.html', entries=entries)
 
 
+@app.route('/notifications')
+@login_required
+def notifications():
+    notifs = models.get_recent_notifications(session['user_id'], limit=50)
+    models.mark_notifications_read(session['user_id'])
+    return render_template('notifications.html', notifications=notifs)
+
+
 # --- Admin routes ---
 
 @app.route('/admin')
@@ -508,6 +525,13 @@ def admin_approve_order(order_id):
 
     models.update_order_status(order_id, 'active')
     user = models.get_user_by_id(order['user_id'])
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='order_approved',
+        message=f'Your savings goal for {order["ship_name"]} has been approved! '
+                f'Send ISK to Bernie May Doff to start saving.',
+        order_id=order_id
+    )
     flash(
         f"Savings goal approved for {user['character_name']} - {order['ship_name']}. "
         f"They can now send ISK to Bernie May Doff to start saving.",
@@ -527,6 +551,12 @@ def admin_reject_order(order_id):
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
     models.update_order_status(order_id, 'cancelled')
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='order_rejected',
+        message=f'Your savings goal request for {order["ship_name"]} was not approved.',
+        order_id=order_id
+    )
     flash('Savings goal request rejected.', 'info')
     return redirect(url_for('admin_dashboard'))
 
@@ -549,6 +579,12 @@ def admin_record_deposit(order_id):
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
     models.record_deposit(order_id, amount, session['user_id'], note, source='manual')
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='deposit_recorded',
+        message=f'{amount:,.2f} ISK has been deposited to your {order["ship_name"]} goal.',
+        order_id=order_id
+    )
     flash(f'Deposit of {amount:,.2f} ISK recorded.', 'success')
     return redirect(url_for('admin_order_detail', order_id=order_id))
 
@@ -641,6 +677,13 @@ def admin_approve_withdrawal(order_id):
     models.update_order_status(order_id, 'withdrawn')
     balance = order['amount_deposited'] + order['interest_earned']
     user = models.get_user_by_id(order['user_id'])
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='withdrawal_approved',
+        message=f'Your withdrawal request for {order["ship_name"]} has been approved. '
+                f'{balance:,.2f} ISK will be sent in-game.',
+        order_id=order_id
+    )
     flash(
         f"Withdrawal approved for {user['character_name']}. "
         f"Please send {balance:,.2f} ISK in-game.",
@@ -660,6 +703,13 @@ def admin_deny_withdrawal(order_id):
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
     models.update_order_status(order_id, 'active')
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='withdrawal_denied',
+        message=f'Your withdrawal request for {order["ship_name"]} was denied. '
+                f'Your savings goal is still active.',
+        order_id=order_id
+    )
     flash('Withdrawal request denied. Savings goal is active again.', 'info')
     return redirect(url_for('admin_dashboard'))
 
@@ -721,6 +771,12 @@ def admin_assign_unmatched(journal_id):
         journal_id=journal_id,
     )
     models.mark_journal_matched(journal_id, order_id)
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='deposit_recorded',
+        message=f'{entry["amount"]:,.2f} ISK has been deposited to your {order["ship_name"]} goal.',
+        order_id=order_id
+    )
     flash(f"Assigned {entry['amount']:,.2f} ISK from {entry['sender_name']} to order #{order_id}.", 'success')
     return redirect(url_for('admin_unmatched'))
 

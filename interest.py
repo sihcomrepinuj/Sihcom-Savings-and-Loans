@@ -154,11 +154,26 @@ def accrue_interest_for_order(order_id):
     )
     db.commit()
 
-    # Check if goal is now completed
+    # Notify user about interest accrual
     order = db.execute('SELECT * FROM ship_orders WHERE id = ?', (order_id,)).fetchone()
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='interest_accrued',
+        message=f'{total_new_interest:,.2f} ISK interest accrued on your '
+                f'{order["ship_name"]} goal over {full_periods} period(s).',
+        order_id=order_id
+    )
+
+    # Check if goal is now completed
     new_balance = order['amount_deposited'] + order['interest_earned']
     if new_balance >= order['goal_price']:
         models.update_order_status(order_id, 'completed')
+        models.create_notification(
+            user_id=order['user_id'],
+            notification_type='goal_completed',
+            message=f'Congratulations! Your savings goal for {order["ship_name"]} is complete!',
+            order_id=order_id
+        )
 
     return {
         'periods_accrued': full_periods,

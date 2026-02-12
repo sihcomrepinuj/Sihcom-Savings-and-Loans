@@ -77,6 +77,20 @@ CREATE TABLE IF NOT EXISTS settings (
     value   TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    order_id    INTEGER,
+    type        TEXT NOT NULL,
+    message     TEXT NOT NULL,
+    is_read     INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (order_id) REFERENCES ship_orders(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON ship_orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON ship_orders(status);
 CREATE INDEX IF NOT EXISTS idx_deposits_order_id ON deposits(order_id);

@@ -129,6 +129,13 @@ def sync_wallet():
                 order_id=active_order['id'],
                 status='matched',
             )
+            models.create_notification(
+                user_id=active_order['user_id'],
+                notification_type='deposit_recorded',
+                message=f'{amount:,.2f} ISK has been deposited to your '
+                        f'{active_order["ship_name"]} goal via wallet sync.',
+                order_id=active_order['id']
+            )
             matched_count += 1
             matched_isk += amount
         else:

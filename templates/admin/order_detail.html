@@ -28,31 +28,31 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-secondary">Member</small><br>
-                        <strong>{{ owner['character_name'] }}</strong>
+                        <small class="text-light">Member</small><br>
+                        <strong class="text-white">{{ owner['character_name'] }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Goal Price</small><br>
-                        <strong>{{ order['goal_price'] | isk }}</strong>
+                        <small class="text-light">Goal Price</small><br>
+                        <strong class="text-white">{{ order['goal_price'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Started</small><br>
-                        {{ order['created_at'][:10] }}
+                        <small class="text-light">Started</small><br>
+                        <span class="text-white">{{ order['created_at'][:10] }}</span>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-secondary">Total Deposited</small><br>
-                        <strong>{{ order['amount_deposited'] | isk }}</strong>
+                        <small class="text-light">Total Deposited</small><br>
+                        <strong class="text-white">{{ order['amount_deposited'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Interest Earned</small><br>
+                        <small class="text-light">Interest Earned</small><br>
                         <strong class="text-success">{{ order['interest_earned'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-secondary">Savings Balance</small><br>
-                        <strong>{{ balance['total_balance'] | isk }}</strong>
+                        <small class="text-light">Savings Balance</small><br>
+                        <strong class="text-white">{{ balance['total_balance'] | isk }}</strong>
                     </div>
                 </div>
 
@@ -78,8 +78,8 @@
 
                 {% if order['notes'] %}
                 <div class="mt-2">
-                    <small class="text-secondary">Notes:</small>
-                    <p>{{ order['notes'] }}</p>
+                    <small class="text-light">Notes:</small>
+                    <p class="text-white">{{ order['notes'] }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -123,7 +123,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-secondary mb-0">No deposits yet.</p>
+                <p class="text-light mb-0">No deposits yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -158,7 +158,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-secondary mb-0">No interest accrued yet.</p>
+                <p class="text-light mb-0">No interest accrued yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -220,7 +220,7 @@
                     ~{{ balance['pending_interest'] | isk }} to accrue
                 </p>
                 {% else %}
-                <p class="text-secondary">No interest periods due yet.</p>
+                <p class="text-light">No interest periods due yet.</p>
                 {% endif %}
                 <form method="POST" action="{{ url_for('admin_accrue_interest', order_id=order['id']) }}">
                     <button type="submit" class="btn btn-outline-info w-100">Accrue Interest</button>

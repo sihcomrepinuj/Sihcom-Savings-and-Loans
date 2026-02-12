@@ -281,6 +281,12 @@ def record_deposit(order_id, amount, recorded_by_user_id, note=None,
     savings_balance = order['amount_deposited'] + order['interest_earned']
     if savings_balance >= order['goal_price']:
         update_order_status(order_id, 'completed')
+        create_notification(
+            user_id=order['user_id'],
+            notification_type='goal_completed',
+            message=f'Congratulations! Your savings goal for {order["ship_name"]} is complete!',
+            order_id=order_id
+        )
 
 
 def get_deposits_for_order(order_id):
@@ -380,3 +386,48 @@ def get_interest_settings():
         'interest_rate': float(get_setting('interest_rate') or '0.05'),
         'interest_period': get_setting('interest_period') or 'monthly',
     }
+
+
+# --- Notifications ---
+
+def create_notification(user_id, notification_type, message, order_id=None):
+    """Create a new notification for a user."""
+    db = database.get_db()
+    db.execute(
+        'INSERT INTO notifications (user_id, order_id, type, message) '
+        'VALUES (?, ?, ?, ?)',
+        (user_id, order_id, notification_type, message)
+    )
+    db.commit()
+
+
+def get_unread_count(user_id):
+    """Get count of unread notifications for badge display."""
+    db = database.get_db()
+    row = db.execute(
+        'SELECT COUNT(*) as cnt FROM notifications '
+        'WHERE user_id = ? AND is_read = 0',
+        (user_id,)
+    ).fetchone()
+    return row['cnt']
+
+
+def get_recent_notifications(user_id, limit=20):
+    """Get recent notifications (read and unread) for a user."""
+    db = database.get_db()
+    return db.execute(
+        'SELECT * FROM notifications WHERE user_id = ? '
+        'ORDER BY created_at DESC LIMIT ?',
+        (user_id, limit)
+    ).fetchall()
+
+
+def mark_notifications_read(user_id):
+    """Mark all notifications as read for a user."""
+    db = database.get_db()
+    db.execute(
+        'UPDATE notifications SET is_read = 1 '
+        'WHERE user_id = ? AND is_read = 0',
+        (user_id,)
+    )
+    db.commit()
