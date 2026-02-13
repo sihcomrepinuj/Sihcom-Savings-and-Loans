@@ -41,10 +41,10 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **base.html** - Bootstrap 5 dark theme, nav with Ship Catalog, Leaderboard links, notification bell with unread badge, and Admin dropdown
 - **index.html** - Landing page with EVE SSO login button
 - **error.html** - 403/404 error pages
-- **dashboard.html** - Member dashboard showing goals with progress bars, deposit instructions, leaderboard visibility toggle on active cards, contrast-fixed
+- **dashboard.html** - Member dashboard showing goals with progress bars, deposit instructions, leaderboard visibility form-switch toggle on active cards, contrast-fixed
 - **catalog.html** - Member ship catalog browser grouped by category with "Start Saving" buttons
-- **order_detail.html** - Member order detail with deposit history, source badges, "How to Deposit" sidebar card, and leaderboard visibility toggle
-- **leaderboard.html** - Leaderboard showing character names, Goal column (public goals show ship name, private show ❓), and progress bars (no ISK amounts)
+- **order_detail.html** - Member order detail with deposit history, source badges, "How to Deposit" sidebar card, and leaderboard visibility form-switch toggle
+- **leaderboard.html** - Leaderboard showing character names, Goal column (public goals show ship name, private show ❓), and progress bars with teal-to-cyan HSL gradient and progressive glow effect above 60% (no ISK amounts)
 - **notifications.html** - Persistent notifications page; unread highlighted with border-info, links to relevant orders
 - **admin/dashboard.html** - Admin dashboard with 6 stat cards, pending approvals, withdrawal requests, all orders table
 - **admin/catalog.html** - Admin catalog management with inline edit forms, category field, grouped by category
@@ -107,6 +107,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - config.py is committed to git (no secrets, reads from env vars) - was previously gitignored which broke Railway deploy
 - Dark theme contrast was low on several pages - fixed with white text classes and CSS overrides
 - EVE Developer Portal callback URL must exactly match the Railway env var EVE_CALLBACK_URL
+- Leaderboard progress bars use Jinja-computed HSL values (hue 180, dynamic saturation/lightness) with CSS `.progress-glow` class for overflow-visible box-shadow glow
 
 ## What Could Be Added Next
 - Automatic scheduled wallet syncing (currently manual button press)
