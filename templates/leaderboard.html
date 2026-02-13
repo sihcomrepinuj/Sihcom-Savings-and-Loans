@@ -34,13 +34,16 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="progress progress-glow flex-grow-1 me-2" style="height: 20px;">
-                                            {% set hue = (entry['progress'] / 100 * 220)|round|int %}
+                                            {% set sat = (30 + entry['progress'] / 100 * 55)|round|int %}
+                                            {% set lit = (30 + entry['progress'] / 100 * 25)|round|int %}
                                             <div class="progress-bar"
                                                 role="progressbar"
                                                 style="width: {{ entry['progress'] }}%;
-                                                       background-color: hsl({{ hue }}, 85%, 55%);
-                                                       box-shadow: 0 0 8px 2px hsla({{ hue }}, 85%, 55%, 0.6),
-                                                                   0 0 20px 4px hsla({{ hue }}, 85%, 55%, 0.3);"
+                                                       background-color: hsl(180, {{ sat }}%, {{ lit }}%);
+                                                       {% if entry['progress'] >= 80 %}
+                                                       box-shadow: 0 0 8px 2px hsla(180, {{ sat }}%, {{ lit }}%, 0.6),
+                                                                   0 0 20px 4px hsla(180, {{ sat }}%, {{ lit }}%, 0.3);
+                                                       {% endif %}"
                                                 aria-valuenow="{{ entry['progress'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                             </div>
