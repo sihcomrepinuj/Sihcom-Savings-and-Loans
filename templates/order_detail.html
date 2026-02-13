@@ -103,7 +103,7 @@
                                    {% if order['is_public'] %}checked{% endif %}
                                    onchange="this.form.submit()">
                             <label class="form-check-label text-light" for="public_toggle">
-                                Show ship on Leaderboard
+                                {% if order['is_public'] %}Hide from Leaderboard{% else %}Show on Leaderboard{% endif %}
                             </label>
                         </div>
                     </form>
