@@ -34,15 +34,16 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="progress progress-glow flex-grow-1 me-2" style="height: 20px;">
-                                            {% set sat = (30 + entry['progress'] / 100 * 55)|round|int %}
-                                            {% set lit = (30 + entry['progress'] / 100 * 25)|round|int %}
+                                            {% set sat = (45 + entry['progress'] / 100 * 40)|round|int %}
+                                            {% set lit = (38 + entry['progress'] / 100 * 17)|round|int %}
+                                            {% set glow = ([(entry['progress'] - 60) / 30, 1]|min)|round(2) %}
                                             <div class="progress-bar"
                                                 role="progressbar"
                                                 style="width: {{ entry['progress'] }}%;
                                                        background-color: hsl(180, {{ sat }}%, {{ lit }}%);
-                                                       {% if entry['progress'] >= 80 %}
-                                                       box-shadow: 0 0 8px 2px hsla(180, {{ sat }}%, {{ lit }}%, 0.6),
-                                                                   0 0 20px 4px hsla(180, {{ sat }}%, {{ lit }}%, 0.3);
+                                                       {% if glow > 0 %}
+                                                       box-shadow: 0 0 8px 2px hsla(180, {{ sat }}%, {{ lit }}%, {{ (0.6 * glow)|round(2) }}),
+                                                                   0 0 20px 4px hsla(180, {{ sat }}%, {{ lit }}%, {{ (0.3 * glow)|round(2) }});
                                                        {% endif %}"
                                                 aria-valuenow="{{ entry['progress'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
