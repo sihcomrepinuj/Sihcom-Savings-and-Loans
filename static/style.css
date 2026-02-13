@@ -25,6 +25,17 @@
     background-color: #495057;
 }
 
+/* Leaderboard glowing progress bar */
+.progress-glow {
+    overflow: visible;
+    border-radius: 0.375rem;
+}
+
+.progress-glow .progress-bar {
+    border-radius: 0.375rem;
+    transition: width 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
 .table-dark {
     --bs-table-bg: transparent;
 }

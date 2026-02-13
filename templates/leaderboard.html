@@ -33,15 +33,14 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="progress flex-grow-1 me-2" style="height: 20px;">
-                                            <div class="progress-bar
-                                                {% if entry['progress'] >= 100 %}bg-primary
-                                                {% elif entry['progress'] >= 75 %}bg-success
-                                                {% elif entry['progress'] >= 50 %}bg-info
-                                                {% elif entry['progress'] >= 25 %}bg-warning
-                                                {% else %}bg-secondary{% endif %}"
+                                        <div class="progress progress-glow flex-grow-1 me-2" style="height: 20px;">
+                                            {% set hue = (entry['progress'] / 100 * 220)|round|int %}
+                                            <div class="progress-bar"
                                                 role="progressbar"
-                                                style="width: {{ entry['progress'] }}%"
+                                                style="width: {{ entry['progress'] }}%;
+                                                       background-color: hsl({{ hue }}, 85%, 55%);
+                                                       box-shadow: 0 0 8px 2px hsla({{ hue }}, 85%, 55%, 0.6),
+                                                                   0 0 20px 4px hsla({{ hue }}, 85%, 55%, 0.3);"
                                                 aria-valuenow="{{ entry['progress'] }}"
                                                 aria-valuemin="0" aria-valuemax="100">
                                             </div>
