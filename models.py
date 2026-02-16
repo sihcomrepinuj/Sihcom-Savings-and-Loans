@@ -203,7 +203,7 @@ def get_leaderboard():
         result.append({
             'character_name': r['character_name'],
             'progress': round(progress, 1),
-            'ship_name': r['ship_name'],
+            'ship_name': r['ship_name'] if r['is_public'] else None,
             'is_public': r['is_public'],
         })
     return result
