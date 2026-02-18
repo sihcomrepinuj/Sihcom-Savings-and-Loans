@@ -1,3 +1,4 @@
+import atexit
 import logging
 import secrets
 from functools import wraps
@@ -12,6 +13,7 @@ import models
 import interest
 import wallet
 import esi
+from apscheduler.schedulers.background import BackgroundScheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +35,47 @@ app.teardown_appcontext(database.close_db)
 
 with app.app_context():
     database.init_db()
+
+
+# --- Scheduled wallet sync ---
+
+def _scheduled_wallet_sync():
+    """Background job: sync wallet with Flask app context."""
+    with app.app_context():
+        try:
+            result = wallet.sync_wallet()
+            if result is None:
+                logger.warning('Scheduled wallet sync: no admin refresh token')
+            elif result['total_processed'] == 0:
+                logger.info('Scheduled wallet sync: no new deposits')
+            else:
+                parts = []
+                if result['matched_count']:
+                    parts.append(
+                        f"{result['matched_count']} deposit(s) matched "
+                        f"({result['matched_isk']:,.2f} ISK)"
+                    )
+                if result['unmatched_count']:
+                    parts.append(f"{result['unmatched_count']} unmatched")
+                logger.info(f"Scheduled wallet sync: {', '.join(parts)}")
+        except Exception:
+            logger.exception('Scheduled wallet sync error')
+
+
+if Config.WALLET_SYNC_INTERVAL > 0 and not app.debug:
+    _scheduler = BackgroundScheduler(daemon=True)
+    _scheduler.add_job(
+        func=_scheduled_wallet_sync,
+        trigger='interval',
+        minutes=Config.WALLET_SYNC_INTERVAL,
+        id='wallet_sync',
+        misfire_grace_time=120,
+        coalesce=True,
+        max_instances=1,
+    )
+    _scheduler.start()
+    atexit.register(_scheduler.shutdown)
+    logger.info(f'Wallet sync scheduler started: every {Config.WALLET_SYNC_INTERVAL} min')
 
 
 # --- Template filters ---

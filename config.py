@@ -19,3 +19,6 @@ class Config:
 
     # User agent for ESI requests
     USER_AGENT = 'Sihcom Savings and Loans (contact: your-eve-name)'
+
+    # Automatic wallet sync interval in minutes (0 to disable)
+    WALLET_SYNC_INTERVAL = int(os.environ.get('WALLET_SYNC_INTERVAL', '5'))

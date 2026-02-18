@@ -25,6 +25,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - Admin character is "Bernie May Doff" - also the bank character for wallet sync
 - Deposits come in via automatic wallet journal sync OR manual admin entry
 - **In-app notifications**: Users receive persistent notifications for key events (goal approved/rejected, deposits, interest accrual, goal completion, withdrawal decisions). Badge count shown in navbar, marked read when viewed.
+- **Automatic wallet sync**: APScheduler runs `sync_wallet()` every N minutes (configurable via `WALLET_SYNC_INTERVAL` env var, default 5, set 0 to disable). Only active under Gunicorn (not in debug mode).
 
 ## Files Overview
 
@@ -83,6 +84,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - EVE_CALLBACK_URL (https://sihcom-savings-and-loans.up.railway.app/callback)
 - ADMIN_CHARACTER_ID (Bernie May Doff's character ID)
 - DATA_DIR (/data)
+- WALLET_SYNC_INTERVAL (optional, default 5 — minutes between syncs, 0 to disable)
 
 ## Database Schema (8 tables)
 1. **users** - id, character_id (unique), character_name, is_admin, refresh_token, created_at
@@ -110,7 +112,6 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - Leaderboard progress bars use Jinja-computed HSL values (hue 180, dynamic saturation/lightness) with CSS `.progress-glow` class for overflow-visible box-shadow glow
 
 ## What Could Be Added Next
-- Automatic scheduled wallet syncing (currently manual button press)
 - Email/Discord notifications (in addition to in-app notifications)
 - Multiple goals per member
 - Partial withdrawals
