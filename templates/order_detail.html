@@ -137,6 +137,8 @@
                                 <td>
                                     {% if dep['source'] == 'wallet' %}
                                     <span class="badge bg-primary">Wallet</span>
+                                    {% elif dep['source'] == 'affiliate' %}
+                                    <span class="badge bg-success">Affiliate</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Manual</span>
                                     {% endif %}
