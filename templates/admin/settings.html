@@ -72,6 +72,31 @@
                 </p>
             </div>
         </div>
+
+        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+            <div class="card-header">
+                <h4 class="mb-0">Affiliate Settings</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="usd_to_isk_ratio" class="form-label">USD to ISK Ratio</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-light border-secondary">$1 =</span>
+                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                                   id="usd_to_isk_ratio" name="usd_to_isk_ratio"
+                                   step="1" min="1"
+                                   value="{{ affiliate['usd_to_isk_ratio'] | int }}" required>
+                            <span class="input-group-text bg-dark text-light border-secondary">ISK</span>
+                        </div>
+                        <div class="form-text text-secondary">
+                            How many ISK per $1 USD of affiliate earnings. E.g., 1,000,000,000 = 1B ISK per dollar.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Save Affiliate Settings</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

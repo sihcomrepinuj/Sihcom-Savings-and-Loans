@@ -862,10 +862,20 @@ def admin_settings():
             models.set_setting('interest_period', period)
             flash('Settings updated.', 'success')
 
+        # Affiliate settings
+        ratio = request.form.get('usd_to_isk_ratio', type=float)
+        if ratio is not None:
+            if ratio <= 0:
+                flash('USD to ISK ratio must be greater than 0.', 'danger')
+            else:
+                models.set_setting('usd_to_isk_ratio', str(ratio))
+                flash('Affiliate settings updated.', 'success')
+
         return redirect(url_for('admin_settings'))
 
     settings = models.get_interest_settings()
-    return render_template('admin/settings.html', settings=settings)
+    affiliate = models.get_affiliate_settings()
+    return render_template('admin/settings.html', settings=settings, affiliate=affiliate)
 
 
 # --- Error handlers ---
