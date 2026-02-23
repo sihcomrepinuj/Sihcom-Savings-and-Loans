@@ -878,6 +878,80 @@ def admin_settings():
     return render_template('admin/settings.html', settings=settings, affiliate=affiliate)
 
 
+# --- Admin: Affiliate Distribution ---
+
+@app.route('/admin/distribute-affiliate', methods=['POST'])
+@admin_required
+def admin_distribute_affiliate():
+    import math
+
+    dollars = request.form.get('dollars', type=float)
+    if not dollars or dollars <= 0:
+        flash('Please enter a valid dollar amount.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    affiliate = models.get_affiliate_settings()
+    ratio = affiliate['usd_to_isk_ratio']
+    total_isk = dollars * ratio
+
+    # Get all active orders
+    active_orders = models.get_active_orders()
+    if not active_orders:
+        flash('No active savings goals to distribute to.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+
+    total_deposited = sum(o['amount_deposited'] for o in active_orders)
+    admin_user = models.get_admin_user()
+    admin_id = admin_user['id'] if admin_user else None
+
+    if total_deposited <= 0:
+        # Fallback: equal split
+        per_order = math.floor(total_isk / len(active_orders))
+        shares = [(o, per_order) for o in active_orders]
+        remainder = total_isk - (per_order * len(active_orders))
+    else:
+        # Proportional distribution
+        shares = []
+        distributed = 0
+        for o in active_orders:
+            share = math.floor(total_isk * o['amount_deposited'] / total_deposited)
+            shares.append((o, share))
+            distributed += share
+        remainder = total_isk - distributed
+
+    # Give remainder to the largest account
+    if remainder > 0 and shares:
+        largest_idx = max(range(len(shares)), key=lambda i: shares[i][0]['amount_deposited'])
+        order, share = shares[largest_idx]
+        shares[largest_idx] = (order, share + remainder)
+
+    # Record deposits and send notifications
+    count = 0
+    for order, share in shares:
+        if share <= 0:
+            continue
+        models.record_deposit(
+            order_id=order['id'],
+            amount=share,
+            recorded_by_user_id=admin_id,
+            note=f'Affiliate distribution: ${dollars:.2f}',
+            source='affiliate',
+        )
+        models.create_notification(
+            user_id=order['user_id'],
+            notification_type='deposit_recorded',
+            message=f'{share:,.2f} ISK affiliate bonus deposited to your {order["ship_name"]} goal.',
+            order_id=order['id'],
+        )
+        count += 1
+
+    flash(
+        f'Distributed {total_isk:,.0f} ISK (${dollars:.2f}) across {count} account(s).',
+        'success',
+    )
+    return redirect(url_for('admin_dashboard'))
+
+
 # --- Error handlers ---
 
 @app.errorhandler(403)
