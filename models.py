@@ -209,6 +209,22 @@ def get_leaderboard():
     return result
 
 
+def get_completed_badges_for_active_users():
+    """Return completed orders (with type_id) for users who have active goals."""
+    db = database.get_db()
+    return db.execute(
+        'SELECT u.character_name, o.ship_name, o.type_id '
+        'FROM ship_orders o '
+        'JOIN users u ON o.user_id = u.id '
+        "WHERE o.status = 'completed' AND o.type_id IS NOT NULL "
+        '  AND o.user_id IN ('
+        '    SELECT user_id FROM ship_orders '
+        "    WHERE status = 'active' AND goal_price > 0"
+        '  ) '
+        'ORDER BY o.updated_at ASC',
+    ).fetchall()
+
+
 def toggle_order_public(order_id, is_public):
     """Toggle whether an order's ship name appears on the leaderboard."""
     db = database.get_db()

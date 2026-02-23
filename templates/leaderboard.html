@@ -23,7 +23,17 @@
                             {% for entry in entries %}
                             <tr>
                                 <td class="text-secondary">{{ loop.index }}</td>
-                                <td class="text-white fw-semibold">{{ entry['character_name'] }}</td>
+                                <td class="text-white fw-semibold">
+                                    {{ entry['character_name'] }}
+                                    {% for badge in badges.get(entry['character_name'], []) %}
+                                    <img src="{{ badge['type_id'] | ship_image(64) }}"
+                                         alt="{{ badge['ship_name'] }}"
+                                         title="{{ badge['ship_name'] }}"
+                                         class="completion-badge ms-1"
+                                         data-bs-toggle="tooltip"
+                                         data-bs-placement="top">
+                                    {% endfor %}
+                                </td>
                                 <td>
                                     {% if entry['is_public'] %}
                                     <span class="text-light">{{ entry['ship_name'] }}</span>
@@ -72,4 +82,11 @@
     <a href="{{ url_for('catalog') }}" class="btn btn-success">Browse Ships</a>
 </div>
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltips.map(function(el) { return new bootstrap.Tooltip(el); });
+});
+</script>
 {% endblock %}

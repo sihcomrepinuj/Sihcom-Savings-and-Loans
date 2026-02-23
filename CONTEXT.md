@@ -26,13 +26,14 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - Deposits come in via automatic wallet journal sync OR manual admin entry
 - **In-app notifications**: Users receive persistent notifications for key events (goal approved/rejected, deposits, interest accrual, goal completion, withdrawal decisions). Badge count shown in navbar, marked read when viewed.
 - **Automatic wallet sync**: APScheduler runs `sync_wallet()` every N minutes (configurable via `WALLET_SYNC_INTERVAL` env var, default 5, set 0 to disable). Only active under Gunicorn (not in debug mode).
+- **Completion badges**: Pilots on the leaderboard who have previously completed savings goals show small ship render images (28px) inline after their name. Bootstrap tooltip on hover shows the ship name. Always visible regardless of is_public setting.
 
 ## Files Overview
 
 ### Core Python
 - **config.py** - Config class reading from env vars (SECRET_KEY, EVE_CLIENT_ID, EVE_CLIENT_SECRET, EVE_CALLBACK_URL, ADMIN_CHARACTER_ID, DATA_DIR)
 - **database.py** - SQLite schema (8 tables: users, ship_catalog, ship_orders, deposits, interest_log, wallet_journal, settings, notifications), Flask g-based connections, Row factory, migration via `_try_alter()`
-- **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings, notifications. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`, `get_leaderboard()` (returns ship_name + is_public), `toggle_order_public()`, `update_order_details()`, `create_notification()`, `get_unread_count()`, `mark_notifications_read()`
+- **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings, notifications. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`, `get_leaderboard()` (returns ship_name + is_public), `get_completed_badges_for_active_users()`, `toggle_order_public()`, `update_order_details()`, `create_notification()`, `get_unread_count()`, `mark_notifications_read()`
 - **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`, `_get_eligible_deposits()`. Uses PERIOD_DAYS dict. Interest accrues only on deposits older than 30 days (eligible balance).
 - **wallet.py** - ESI wallet sync: `_get_bank_preston()`, `fetch_wallet_journal()`, `sync_wallet()`. Filters for `player_donation` with `amount > 0`, deduplicates via journal_id, auto-matches to users with active orders
 - **esi.py** - Public ESI helper: `search_type_id()` for ship name→type_id lookup, `get_ship_image_url()` for EVE image server URLs
@@ -45,7 +46,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **dashboard.html** - Member dashboard showing goals with progress bars, deposit instructions, leaderboard visibility form-switch toggle on active cards, contrast-fixed
 - **catalog.html** - Member ship catalog browser grouped by category with "Start Saving" buttons
 - **order_detail.html** - Member order detail with deposit history, source badges, "How to Deposit" sidebar card, and leaderboard visibility form-switch toggle
-- **leaderboard.html** - Leaderboard showing character names, Goal column (public goals show ship name, private show ❓), and progress bars with teal-to-cyan HSL gradient and progressive glow effect above 60% (no ISK amounts)
+- **leaderboard.html** - Leaderboard showing character names with completion badges (ship render images from EVE), Goal column (public goals show ship name, private show ❓), and progress bars with teal-to-cyan HSL gradient and progressive glow effect above 60% (no ISK amounts)
 - **notifications.html** - Persistent notifications page; unread highlighted with border-info, links to relevant orders
 - **admin/dashboard.html** - Admin dashboard with 6 stat cards, pending approvals, withdrawal requests, all orders table
 - **admin/catalog.html** - Admin catalog management with inline edit forms, category field, grouped by category

@@ -36,6 +36,20 @@
     transition: width 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
+/* Completion badges on leaderboard */
+.completion-badge {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+
+.completion-badge:hover {
+    opacity: 1;
+}
+
 .table-dark {
     --bs-table-bg: transparent;
 }

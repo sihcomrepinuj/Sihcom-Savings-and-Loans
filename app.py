@@ -356,7 +356,14 @@ def toggle_order_public(order_id):
 @login_required
 def leaderboard():
     entries = models.get_leaderboard()
-    return render_template('leaderboard.html', entries=entries)
+    badge_rows = models.get_completed_badges_for_active_users()
+    badges = {}
+    for row in badge_rows:
+        badges.setdefault(row['character_name'], []).append({
+            'ship_name': row['ship_name'],
+            'type_id': row['type_id'],
+        })
+    return render_template('leaderboard.html', entries=entries, badges=badges)
 
 
 @app.route('/notifications')
