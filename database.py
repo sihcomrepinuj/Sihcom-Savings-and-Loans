@@ -109,6 +109,7 @@ MIGRATION_SQL = """
 DEFAULT_SETTINGS = {
     'interest_rate': '0.05',
     'interest_period': 'monthly',
+    'usd_to_isk_ratio': '1000000000',
 }
 
 

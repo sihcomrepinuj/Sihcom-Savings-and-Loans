@@ -404,6 +404,12 @@ def get_interest_settings():
     }
 
 
+def get_affiliate_settings():
+    return {
+        'usd_to_isk_ratio': float(get_setting('usd_to_isk_ratio') or '1000000000'),
+    }
+
+
 # --- Notifications ---
 
 def create_notification(user_id, notification_type, message, order_id=None):
