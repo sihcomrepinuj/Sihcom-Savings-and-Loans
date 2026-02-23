@@ -390,6 +390,7 @@ def admin_dashboard():
             balances[order['id']] = interest.calculate_current_balance(order)
 
     settings = models.get_interest_settings()
+    affiliate = models.get_affiliate_settings()
 
     active_orders = [o for o in all_orders if o['status'] == 'active']
     total_deposited = sum(o['amount_deposited'] for o in active_orders)
@@ -414,6 +415,7 @@ def admin_dashboard():
         balances=balances,
         settings=settings,
         stats=stats,
+        affiliate=affiliate,
     )
 
 

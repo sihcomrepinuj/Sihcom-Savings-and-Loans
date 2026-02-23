@@ -6,6 +6,10 @@
     <h2>Admin Dashboard</h2>
     <div>
         <a href="{{ url_for('admin_create_order') }}" class="btn btn-success btn-sm me-2">New Savings Goal</a>
+        <button type="button" class="btn btn-outline-success btn-sm me-2"
+                data-bs-toggle="modal" data-bs-target="#distributeModal">
+            Distribute Earnings
+        </button>
         <form method="POST" action="{{ url_for('admin_sync_wallet') }}" class="d-inline me-2">
             <button type="submit" class="btn btn-outline-primary btn-sm">Sync Wallet</button>
         </form>
@@ -237,6 +241,40 @@
     </div>
 </div>
 
+<!-- Distribute Affiliate Earnings Modal -->
+<div class="modal fade" id="distributeModal" tabindex="-1" aria-labelledby="distributeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white" id="distributeModalLabel">Distribute Affiliate Earnings</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_distribute_affiliate') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="dollars" class="form-label">Dollar Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-light border-secondary">$</span>
+                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                                   id="dollars" name="dollars"
+                                   step="0.01" min="0.01" required
+                                   oninput="updateIskPreview()">
+                        </div>
+                    </div>
+                    <div id="iskPreview" class="text-secondary small"></div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('Distribute affiliate earnings to all active accounts?');">
+                        Distribute
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function toggleClosedOrders() {
     var rows = document.querySelectorAll('.order-closed');
@@ -248,6 +286,18 @@ function toggleClosedOrders() {
     btn.textContent = showing ? 'Show Active' : 'Show All';
     btn.classList.toggle('btn-outline-secondary', !showing);
     btn.classList.toggle('btn-outline-light', showing);
+}
+
+var iskRatio = {{ affiliate['usd_to_isk_ratio'] | int }};
+function updateIskPreview() {
+    var dollars = parseFloat(document.getElementById('dollars').value) || 0;
+    var totalIsk = dollars * iskRatio;
+    var preview = document.getElementById('iskPreview');
+    if (dollars > 0) {
+        preview.textContent = 'Total ISK to distribute: ' + totalIsk.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' ISK';
+    } else {
+        preview.textContent = '';
+    }
 }
 </script>
 {% endblock %}
