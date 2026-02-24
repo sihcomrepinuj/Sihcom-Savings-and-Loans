@@ -112,11 +112,22 @@ def ship_image_url(type_id, size=256):
 
 @app.template_filter('badge_url')
 def badge_url_filter(category):
-    """Return URL for a category badge image."""
+    """Return URL for a category badge image (supports .png or .svg)."""
+    import os
+    badge_dir = os.path.join(app.static_folder, 'badges')
     if not category:
-        return url_for('static', filename='badges/placeholder.png')
-    slug = category.lower().replace(' ', '-')
-    return url_for('static', filename=f'badges/{slug}.png')
+        slug = 'placeholder'
+    else:
+        slug = category.lower().replace(' ', '-')
+    # Check for PNG first, then SVG
+    for ext in ('png', 'svg'):
+        if os.path.exists(os.path.join(badge_dir, f'{slug}.{ext}')):
+            return url_for('static', filename=f'badges/{slug}.{ext}')
+    # Fallback to placeholder
+    for ext in ('png', 'svg'):
+        if os.path.exists(os.path.join(badge_dir, f'placeholder.{ext}')):
+            return url_for('static', filename=f'badges/placeholder.{ext}')
+    return url_for('static', filename='badges/placeholder.png')
 
 
 # --- Context processors ---

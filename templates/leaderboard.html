@@ -26,12 +26,14 @@
                                 <td class="text-white fw-semibold">
                                     {{ entry['character_name'] }}
                                     {% for badge in badges.get(entry['character_name'], []) %}
-                                    <img src="{{ badge['type_id'] | ship_image(64) }}"
+                                    <img src="{{ badge['category'] | badge_url }}"
                                          alt="{{ badge['ship_name'] }}"
-                                         title="{{ badge['ship_name'] }}"
                                          class="completion-badge ms-1"
-                                         data-bs-toggle="tooltip"
-                                         data-bs-placement="top">
+                                         data-bs-toggle="popover"
+                                         data-bs-trigger="hover focus"
+                                         data-bs-placement="top"
+                                         data-bs-html="true"
+                                         data-bs-content="<div class='text-center'><img src='{{ badge['type_id'] | ship_image(128) }}' style='width:96px;height:96px;object-fit:contain;' class='mb-1'><br><strong>{{ badge['ship_name'] }}</strong></div>">
                                     {% endfor %}
                                 </td>
                                 <td>
@@ -85,8 +87,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltips.map(function(el) { return new bootstrap.Tooltip(el); });
+    var popovers = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popovers.map(function(el) {
+        return new bootstrap.Popover(el, { container: 'body', sanitize: false });
+    });
 });
 </script>
 {% endblock %}
