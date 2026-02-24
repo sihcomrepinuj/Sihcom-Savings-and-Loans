@@ -110,6 +110,15 @@ def ship_image_url(type_id, size=256):
     return esi.get_ship_image_url(type_id, size) if type_id else None
 
 
+@app.template_filter('badge_url')
+def badge_url_filter(category):
+    """Return URL for a category badge image."""
+    if not category:
+        return url_for('static', filename='badges/placeholder.png')
+    slug = category.lower().replace(' ', '-')
+    return url_for('static', filename=f'badges/{slug}.png')
+
+
 # --- Context processors ---
 
 @app.context_processor
@@ -363,6 +372,7 @@ def leaderboard():
         badges.setdefault(row['character_name'], []).append({
             'ship_name': row['ship_name'],
             'type_id': row['type_id'],
+            'category': row['category'],
         })
     return render_template('leaderboard.html', entries=entries, badges=badges)
 

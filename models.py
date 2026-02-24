@@ -213,7 +213,7 @@ def get_completed_badges_for_active_users():
     """Return completed orders (with type_id) for users who have active goals."""
     db = database.get_db()
     return db.execute(
-        'SELECT u.character_name, o.ship_name, o.type_id '
+        'SELECT u.character_name, o.ship_name, o.type_id, o.category '
         'FROM ship_orders o '
         'JOIN users u ON o.user_id = u.id '
         "WHERE o.status = 'completed' AND o.type_id IS NOT NULL "
