@@ -235,13 +235,13 @@ def toggle_order_public(order_id, is_public):
     db.commit()
 
 
-def update_order_details(order_id, ship_name, goal_price, is_public, type_id=None):
-    """Admin: update an order's ship name, goal price, type_id, and visibility."""
+def update_order_details(order_id, ship_name, goal_price, is_public, type_id=None, category=None):
+    """Admin: update an order's ship name, goal price, type_id, category, and visibility."""
     db = database.get_db()
     db.execute(
-        "UPDATE ship_orders SET ship_name = ?, goal_price = ?, is_public = ?, type_id = ?, "
+        "UPDATE ship_orders SET ship_name = ?, goal_price = ?, is_public = ?, type_id = ?, category = ?, "
         "updated_at = datetime('now') WHERE id = ?",
-        (ship_name, goal_price, 1 if is_public else 0, type_id, order_id)
+        (ship_name, goal_price, 1 if is_public else 0, type_id, category, order_id)
     )
     db.commit()
 

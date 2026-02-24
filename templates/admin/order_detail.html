@@ -254,7 +254,7 @@
         {% endif %}
 
         <!-- Edit Order -->
-        {% if order['status'] in ('active', 'withdrawal_pending') %}
+        {% if order['status'] in ('active', 'withdrawal_pending', 'completed') %}
         <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Edit Order</h5>
@@ -270,6 +270,17 @@
                         <label for="goal_price" class="form-label">Goal Price (ISK)</label>
                         <input type="number" class="form-control bg-dark text-light border-secondary"
                                id="goal_price" name="goal_price" value="{{ order['goal_price'] }}" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category (for badge)</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                               id="category" name="category" value="{{ order['category'] or '' }}"
+                               list="category-list" placeholder="e.g. Subcap, Dread, Super, Titan">
+                        <datalist id="category-list">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">
+                            {% endfor %}
+                        </datalist>
                     </div>
                     <div class="mb-3 form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="is_public" name="is_public" value="1"

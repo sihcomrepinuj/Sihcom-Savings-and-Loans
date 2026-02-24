@@ -583,6 +583,7 @@ def admin_order_detail(order_id):
     deposits = models.get_deposits_for_order(order_id)
     interest_logs = models.get_interest_logs_for_order(order_id)
     user = models.get_user_by_id(order['user_id'])
+    categories = models.get_catalog_categories()
 
     return render_template(
         'admin/order_detail.html',
@@ -591,6 +592,7 @@ def admin_order_detail(order_id):
         deposits=deposits,
         interest_logs=interest_logs,
         owner=user,
+        categories=categories,
     )
 
 
@@ -713,6 +715,7 @@ def admin_edit_order(order_id):
     ship_name = request.form.get('ship_name', '').strip()
     goal_price = request.form.get('goal_price', type=float)
     is_public = request.form.get('is_public') == '1'
+    category = request.form.get('category', '').strip() or None
 
     if not ship_name or not goal_price or goal_price <= 0:
         flash('Please provide a valid ship name and goal price.', 'danger')
@@ -725,7 +728,7 @@ def admin_edit_order(order_id):
         if not type_id:
             flash(f'Could not find "{ship_name}" in EVE database. Image removed.', 'warning')
 
-    models.update_order_details(order_id, ship_name, goal_price, is_public, type_id=type_id)
+    models.update_order_details(order_id, ship_name, goal_price, is_public, type_id=type_id, category=category)
     flash(f'Order updated.', 'success')
     return redirect(url_for('admin_order_detail', order_id=order_id))
 
