@@ -26,7 +26,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - Deposits come in via automatic wallet journal sync OR manual admin entry
 - **In-app notifications**: Users receive persistent notifications for key events (goal approved/rejected, deposits, interest accrual, goal completion, withdrawal decisions). Badge count shown in navbar, marked read when viewed.
 - **Automatic wallet sync**: APScheduler runs `sync_wallet()` every N minutes (configurable via `WALLET_SYNC_INTERVAL` env var, default 5, set 0 to disable). Only active under Gunicorn (not in debug mode).
-- **Completion badges**: Pilots on the leaderboard who have previously completed savings goals show small ship render images (28px) inline after their name. Bootstrap tooltip on hover shows the ship name. Always visible regardless of is_public setting.
+- **Completion badges**: Pilots on the leaderboard who have previously completed savings goals show military-style shield/crest badges (28px) inline after their name, based on the ship's category (Titan, Super, Dread, Subcap). Badge images served from `static/badges/<category-slug>.svg` (or `.png`). Rich Bootstrap Popover on hover shows the ship render image (96px) and ship name. Always visible regardless of is_public setting. Category stored on `ship_orders` at creation time.
 - **Affiliate earnings distribution**: Admin can enter a dollar amount from affiliate kickbacks, which converts to ISK using a configurable USD-to-ISK ratio (stored in settings), and distributes proportionally to all active accounts based on deposited balance. Recorded as regular deposits with `'affiliate'` source (subject to 30-day interest lag). Members receive notifications.
 
 ## Files Overview
@@ -38,7 +38,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`, `_get_eligible_deposits()`. Uses PERIOD_DAYS dict. Interest accrues only on deposits older than 30 days (eligible balance).
 - **wallet.py** - ESI wallet sync: `_get_bank_preston()`, `fetch_wallet_journal()`, `sync_wallet()`. Filters for `player_donation` with `amount > 0`, deduplicates via journal_id, auto-matches to users with active orders
 - **esi.py** - Public ESI helper: `search_type_id()` for ship name→type_id lookup, `get_ship_image_url()` for EVE image server URLs
-- **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, `isk_short` and `ship_image` template filters, context processor for notification badge count, logging on callback
+- **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, `isk_short`, `ship_image`, and `badge_url` template filters, context processor for notification badge count, logging on callback
 
 ### Templates (all in templates/)
 - **base.html** - Bootstrap 5 dark theme, nav with Ship Catalog, Leaderboard links, notification bell with unread badge, and Admin dropdown
@@ -47,7 +47,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **dashboard.html** - Member dashboard showing goals with progress bars, deposit instructions, leaderboard visibility form-switch toggle on active cards, contrast-fixed
 - **catalog.html** - Member ship catalog browser grouped by category with "Start Saving" buttons
 - **order_detail.html** - Member order detail with deposit history, source badges, "How to Deposit" sidebar card, and leaderboard visibility form-switch toggle
-- **leaderboard.html** - Leaderboard showing character names with completion badges (ship render images from EVE), Goal column (public goals show ship name, private show ❓), and progress bars with teal-to-cyan HSL gradient and progressive glow effect above 60% (no ISK amounts)
+- **leaderboard.html** - Leaderboard showing character names with military-style category badges (shield crests from static/badges/), Bootstrap Popover on hover shows ship render + name, Goal column (public goals show ship name, private show ❓), and progress bars with teal-to-cyan HSL gradient and progressive glow effect above 60% (no ISK amounts)
 - **notifications.html** - Persistent notifications page; unread highlighted with border-info, links to relevant orders
 - **admin/dashboard.html** - Admin dashboard with 6 stat cards, pending approvals, withdrawal requests, all orders table, Distribute Earnings modal for affiliate kickbacks
 - **admin/catalog.html** - Admin catalog management with inline edit forms, category field, grouped by category
@@ -91,7 +91,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 ## Database Schema (8 tables)
 1. **users** - id, character_id (unique), character_name, is_admin, refresh_token, created_at
 2. **ship_catalog** - id, ship_name, price, description, is_available, type_id, category, created_at
-3. **ship_orders** - id, user_id, ship_name, goal_price, amount_deposited, interest_earned, status, notes, type_id, is_public, created_at, updated_at
+3. **ship_orders** - id, user_id, ship_name, goal_price, amount_deposited, interest_earned, status, notes, type_id, is_public, category, created_at, updated_at
 4. **deposits** - id, order_id, amount, recorded_by, note, source (manual/wallet/affiliate), journal_id, deposit_date, created_at
 5. **interest_log** - id, order_id, amount, balance_before, balance_after, accrued_at
 6. **wallet_journal** - journal_id (PK, from ESI), sender_id, sender_name, amount, reason, journal_date, order_id, status (unmatched/matched/ignored), created_at
