@@ -6,5 +6,4 @@
     </linearGradient>
   </defs>
   <path d="M32 2 L60 14 L60 50 L32 78 L4 50 L4 14 Z" fill="url(#g)" stroke="#d4b800" stroke-width="2"/>
-  <text x="32" y="48" text-anchor="middle" fill="white" font-size="28" font-weight="bold" font-family="Arial">T</text>
 </svg>
