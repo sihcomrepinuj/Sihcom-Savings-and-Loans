@@ -284,6 +284,7 @@ def request_ship(ship_id):
         goal_price=ship['price'],
         status='pending_approval',
         type_id=ship['type_id'],
+        category=ship['category'],
     )
     flash(f'Savings goal for {ship["ship_name"]} submitted for approval!', 'success')
     return redirect(url_for('dashboard'))
@@ -535,7 +536,14 @@ def admin_create_order():
 
         # Admin-created orders go straight to active
         type_id = esi.search_type_id(ship_name)
-        order_id = models.create_order(user_id, ship_name, goal_price, notes, status='active', type_id=type_id)
+        # Try to find category from catalog
+        catalog_ship = None
+        for s in models.get_all_catalog():
+            if s['ship_name'].lower() == ship_name.lower():
+                catalog_ship = s
+                break
+        category = catalog_ship['category'] if catalog_ship else None
+        order_id = models.create_order(user_id, ship_name, goal_price, notes, status='active', type_id=type_id, category=category)
         flash(f'Savings goal created for {ship_name}.', 'success')
         return redirect(url_for('admin_order_detail', order_id=order_id))
 

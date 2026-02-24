@@ -118,12 +118,12 @@ def remove_catalog_ship(ship_id):
 
 # --- Ship Orders ---
 
-def create_order(user_id, ship_name, goal_price, notes=None, status='pending_approval', type_id=None):
+def create_order(user_id, ship_name, goal_price, notes=None, status='pending_approval', type_id=None, category=None):
     db = database.get_db()
     db.execute(
-        'INSERT INTO ship_orders (user_id, ship_name, goal_price, notes, status, type_id) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
-        (user_id, ship_name, goal_price, notes, status, type_id)
+        'INSERT INTO ship_orders (user_id, ship_name, goal_price, notes, status, type_id, category) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (user_id, ship_name, goal_price, notes, status, type_id, category)
     )
     db.commit()
     return db.execute('SELECT last_insert_rowid()').fetchone()[0]

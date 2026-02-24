@@ -155,6 +155,19 @@ def init_db():
     # Add is_public to ship_orders for leaderboard visibility toggle
     _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN is_public INTEGER DEFAULT 0")
 
+    # Add category to ship_orders for military-style completion badges
+    _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN category TEXT")
+
+    # Backfill category on existing orders from ship_catalog
+    db.execute('''
+        UPDATE ship_orders SET category = (
+            SELECT sc.category FROM ship_catalog sc
+            WHERE sc.ship_name = ship_orders.ship_name
+            LIMIT 1
+        )
+        WHERE category IS NULL
+    ''')
+
     for key, value in DEFAULT_SETTINGS.items():
         db.execute(
             'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
