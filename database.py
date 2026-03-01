@@ -168,6 +168,18 @@ def init_db():
         WHERE category IS NULL
     ''')
 
+    # Rename legacy "Affiliate distribution" labels to "Savings Boost"
+    db.execute("""
+        UPDATE deposits
+        SET note = 'Savings Boost: ' || substr(note, instr(note, ': ') + 2)
+        WHERE source = 'affiliate' AND note LIKE 'Affiliate distribution:%'
+    """)
+    db.execute("""
+        UPDATE notifications
+        SET message = replace(message, 'ISK affiliate bonus deposited', 'ISK Savings Boost deposited')
+        WHERE message LIKE '%ISK affiliate bonus deposited%'
+    """)
+
     for key, value in DEFAULT_SETTINGS.items():
         db.execute(
             'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
