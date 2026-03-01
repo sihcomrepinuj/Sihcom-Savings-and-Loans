@@ -968,13 +968,13 @@ def admin_distribute_affiliate():
             order_id=order['id'],
             amount=share,
             recorded_by_user_id=admin_id,
-            note=f'Affiliate distribution: ${dollars:.2f}',
+            note=f'Savings Boost: ${dollars:.2f}',
             source='affiliate',
         )
         models.create_notification(
             user_id=order['user_id'],
             notification_type='deposit_recorded',
-            message=f'{share:,.2f} ISK affiliate bonus deposited to your {order["ship_name"]} goal.',
+            message=f'{share:,.2f} ISK Savings Boost deposited to your {order["ship_name"]} goal.',
             order_id=order['id'],
         )
         count += 1
