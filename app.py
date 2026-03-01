@@ -968,7 +968,7 @@ def admin_distribute_affiliate():
             order_id=order['id'],
             amount=share,
             recorded_by_user_id=admin_id,
-            note=f'Savings Boost: ${dollars:.2f}',
+            note='Savings Boost',
             source='affiliate',
         )
         models.create_notification(

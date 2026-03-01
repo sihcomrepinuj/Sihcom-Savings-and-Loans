@@ -168,11 +168,11 @@ def init_db():
         WHERE category IS NULL
     ''')
 
-    # Rename legacy "Affiliate distribution" labels to "Savings Boost"
+    # Normalize all affiliate deposit notes to plain "Savings Boost"
     db.execute("""
         UPDATE deposits
-        SET note = 'Savings Boost: ' || substr(note, instr(note, ': ') + 2)
-        WHERE source = 'affiliate' AND note LIKE 'Affiliate distribution:%'
+        SET note = 'Savings Boost'
+        WHERE source = 'affiliate' AND note != 'Savings Boost'
     """)
     db.execute("""
         UPDATE notifications
