@@ -900,7 +900,7 @@ def admin_settings():
 
             if rate is None or rate < 0 or rate > 1:
                 flash('Interest rate must be between 0 and 1 (e.g. 0.05 for 5%).', 'danger')
-            elif period not in ('weekly', 'biweekly', 'monthly'):
+            elif period not in ('daily', 'weekly', 'biweekly', 'monthly'):
                 flash('Invalid interest period.', 'danger')
             else:
                 models.set_setting('interest_rate', str(rate))

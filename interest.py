@@ -6,6 +6,7 @@ import models
 logger = logging.getLogger(__name__)
 
 PERIOD_DAYS = {
+    'daily': 1,
     'weekly': 7,
     'biweekly': 14,
     'monthly': 30,

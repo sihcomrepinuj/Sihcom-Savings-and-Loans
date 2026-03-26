@@ -37,6 +37,9 @@
                         <label for="interest_period" class="form-label">Interest Period</label>
                         <select class="form-select bg-dark text-light border-secondary"
                                 id="interest_period" name="interest_period" required>
+                            <option value="daily" {% if settings['interest_period'] == 'daily' %}selected{% endif %}>
+                                Daily (every day)
+                            </option>
                             <option value="weekly" {% if settings['interest_period'] == 'weekly' %}selected{% endif %}>
                                 Weekly (every 7 days)
                             </option>
@@ -66,10 +69,10 @@
                     Deposits 30+ days old and all previously earned interest earn at the full rate.
                 </p>
                 <p class="mb-0">
-                    <strong>Example:</strong> At 10% monthly, a member deposits 1,000,000,000 ISK.
-                    After 15 days, the effective balance is ~500,000,000 ISK (50% proration),
-                    earning ~50,000,000 ISK. Once the deposit is 30+ days old, the full 1B ISK
-                    earns 100,000,000 ISK per period.
+                    <strong>Example:</strong> For 10% monthly interest with daily compounding,
+                    set period to Daily and rate to 0.003333 (10% &divide; 30 days).
+                    A 1B ISK deposit earns ~3.3M ISK/day once fully mature.
+                    New deposits ramp up over 30 days via proration.
                 </p>
             </div>
         </div>
