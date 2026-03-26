@@ -22,3 +22,6 @@ class Config:
 
     # Automatic wallet sync interval in minutes (0 to disable)
     WALLET_SYNC_INTERVAL = int(os.environ.get('WALLET_SYNC_INTERVAL', '5'))
+
+    # Automatic interest accrual interval in hours (0 to disable)
+    INTEREST_ACCRUAL_INTERVAL = int(os.environ.get('INTEREST_ACCRUAL_INTERVAL', '6'))

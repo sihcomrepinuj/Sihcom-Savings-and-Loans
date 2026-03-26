@@ -210,25 +210,13 @@
             </div>
         </div>
 
-        <!-- Accrue Interest -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Interest Accrual</h5>
-            </div>
-            <div class="card-body">
-                {% if balance['periods_due'] > 0 %}
-                <p class="text-info">
-                    {{ balance['periods_due'] }} period(s) due<br>
-                    ~{{ balance['pending_interest'] | isk }} to accrue
-                </p>
-                {% else %}
-                <p class="text-light">No interest periods due yet.</p>
-                {% endif %}
-                <form method="POST" action="{{ url_for('admin_accrue_interest', order_id=order['id']) }}">
-                    <button type="submit" class="btn btn-outline-info w-100">Accrue Interest</button>
-                </form>
-            </div>
+        <!-- Interest Status (auto-accrued every {{ config.INTEREST_ACCRUAL_INTERVAL | default(6) }} hours) -->
+        {% if balance['periods_due'] > 0 %}
+        <div class="alert alert-info py-2 mb-4">
+            {{ balance['periods_due'] }} interest period(s) pending<br>
+            ~{{ balance['pending_interest'] | isk }} to accrue automatically
         </div>
+        {% endif %}
         {% endif %}
 
         {% if order['status'] == 'withdrawal_pending' %}

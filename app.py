@@ -62,20 +62,62 @@ def _scheduled_wallet_sync():
             logger.exception('Scheduled wallet sync error')
 
 
-if Config.WALLET_SYNC_INTERVAL > 0 and not app.debug:
+def _scheduled_interest_accrual():
+    """Background job: accrue interest on all active orders."""
+    with app.app_context():
+        try:
+            results = interest.accrue_interest_all()
+            if results:
+                total = sum(r['interest_added'] for r in results)
+                logger.info(
+                    f"Scheduled interest accrual: {len(results)} order(s), "
+                    f"{total:,.2f} ISK total"
+                )
+            else:
+                logger.info('Scheduled interest accrual: no interest due')
+        except Exception:
+            logger.exception('Scheduled interest accrual error')
+
+
+if not app.debug:
+    from datetime import datetime as _dt, timedelta as _td
+
     _scheduler = BackgroundScheduler(daemon=True)
-    _scheduler.add_job(
-        func=_scheduled_wallet_sync,
-        trigger='interval',
-        minutes=Config.WALLET_SYNC_INTERVAL,
-        id='wallet_sync',
-        misfire_grace_time=120,
-        coalesce=True,
-        max_instances=1,
-    )
+
+    if Config.WALLET_SYNC_INTERVAL > 0:
+        _scheduler.add_job(
+            func=_scheduled_wallet_sync,
+            trigger='interval',
+            minutes=Config.WALLET_SYNC_INTERVAL,
+            id='wallet_sync',
+            misfire_grace_time=120,
+            coalesce=True,
+            max_instances=1,
+        )
+        logger.info(f'Wallet sync scheduled: every {Config.WALLET_SYNC_INTERVAL} min')
+
+    if Config.INTEREST_ACCRUAL_INTERVAL > 0:
+        _scheduler.add_job(
+            func=_scheduled_interest_accrual,
+            trigger='interval',
+            hours=Config.INTEREST_ACCRUAL_INTERVAL,
+            id='interest_accrual',
+            misfire_grace_time=300,
+            coalesce=True,
+            max_instances=1,
+        )
+        # Catch-up accrual 30 seconds after startup
+        _scheduler.add_job(
+            func=_scheduled_interest_accrual,
+            trigger='date',
+            run_date=_dt.utcnow() + _td(seconds=30),
+            id='interest_accrual_startup',
+            misfire_grace_time=120,
+        )
+        logger.info(f'Interest accrual scheduled: every {Config.INTEREST_ACCRUAL_INTERVAL} hr (+ startup catch-up)')
+
     _scheduler.start()
     atexit.register(_scheduler.shutdown)
-    logger.info(f'Wallet sync scheduler started: every {Config.WALLET_SYNC_INTERVAL} min')
 
 
 # --- Template filters ---
@@ -672,39 +714,6 @@ def admin_record_deposit(order_id):
     return redirect(url_for('admin_order_detail', order_id=order_id))
 
 
-@app.route('/admin/order/<int:order_id>/accrue', methods=['POST'])
-@admin_required
-def admin_accrue_interest(order_id):
-    result = interest.accrue_interest_for_order(order_id)
-    if result is None:
-        flash('Order is not eligible for interest accrual.', 'warning')
-    elif result['periods_accrued'] == 0:
-        flash('No interest periods are due yet.', 'info')
-    else:
-        flash(
-            f"Accrued {result['interest_added']:,.2f} ISK interest "
-            f"over {result['periods_accrued']} period(s).",
-            'success'
-        )
-    return redirect(url_for('admin_order_detail', order_id=order_id))
-
-
-@app.route('/admin/accrue-all', methods=['POST'])
-@admin_required
-def admin_accrue_all():
-    results = interest.accrue_interest_all()
-    if not results:
-        flash('No interest was due on any active orders.', 'info')
-    else:
-        total = sum(r['interest_added'] for r in results)
-        flash(
-            f"Accrued interest on {len(results)} order(s), "
-            f"totaling {total:,.2f} ISK.",
-            'success'
-        )
-    return redirect(url_for('admin_dashboard'))
-
-
 @app.route('/admin/order/<int:order_id>/edit', methods=['POST'])
 @admin_required
 def admin_edit_order(order_id):
@@ -884,22 +893,24 @@ def admin_ignore_unmatched(journal_id):
 @admin_required
 def admin_settings():
     if request.method == 'POST':
-        rate = request.form.get('interest_rate', type=float)
-        period = request.form.get('interest_period', '')
+        # Interest settings (only when that form is submitted)
+        if 'interest_rate' in request.form:
+            rate = request.form.get('interest_rate', type=float)
+            period = request.form.get('interest_period', '')
 
-        if rate is None or rate < 0 or rate > 1:
-            flash('Interest rate must be between 0 and 1 (e.g. 0.05 for 5%).', 'danger')
-        elif period not in ('weekly', 'biweekly', 'monthly'):
-            flash('Invalid interest period.', 'danger')
-        else:
-            models.set_setting('interest_rate', str(rate))
-            models.set_setting('interest_period', period)
-            flash('Settings updated.', 'success')
+            if rate is None or rate < 0 or rate > 1:
+                flash('Interest rate must be between 0 and 1 (e.g. 0.05 for 5%).', 'danger')
+            elif period not in ('weekly', 'biweekly', 'monthly'):
+                flash('Invalid interest period.', 'danger')
+            else:
+                models.set_setting('interest_rate', str(rate))
+                models.set_setting('interest_period', period)
+                flash('Settings updated.', 'success')
 
-        # Affiliate settings
-        ratio = request.form.get('usd_to_isk_ratio', type=float)
-        if ratio is not None:
-            if ratio <= 0:
+        # Affiliate settings (only when that form is submitted)
+        if 'usd_to_isk_ratio' in request.form:
+            ratio = request.form.get('usd_to_isk_ratio', type=float)
+            if ratio is None or ratio <= 0:
                 flash('USD to ISK ratio must be greater than 0.', 'danger')
             else:
                 models.set_setting('usd_to_isk_ratio', str(ratio))

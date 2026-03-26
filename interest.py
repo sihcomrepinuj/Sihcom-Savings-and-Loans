@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime, timedelta
 import database
 import models
+
+logger = logging.getLogger(__name__)
 
 PERIOD_DAYS = {
     'weekly': 7,
@@ -98,6 +101,7 @@ def accrue_interest_for_order(order_id):
     db = database.get_db()
     order = db.execute('SELECT * FROM ship_orders WHERE id = ?', (order_id,)).fetchone()
     if not order or order['status'] != 'active':
+        logger.debug('Order %s: skip (status=%s)', order_id, order['status'] if order else 'NOT FOUND')
         return None
 
     settings = models.get_interest_settings()
@@ -110,6 +114,8 @@ def accrue_interest_for_order(order_id):
     eligible_balance = eligible_deposits + order['interest_earned']
 
     if eligible_balance <= 0:
+        logger.info('Order %s (%s): eligible_balance=0 (eligible_deposits=%.2f, interest_earned=%.2f)',
+                     order_id, order['ship_name'], eligible_deposits, order['interest_earned'])
         return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': 0}
 
     # Find the last accrual date
@@ -126,6 +132,11 @@ def accrue_interest_for_order(order_id):
     now = datetime.utcnow()
     days_elapsed = (now - last_accrual).days
     full_periods = days_elapsed // period_days
+
+    logger.info('Order %s (%s): eligible=%.2f, last_accrual=%s, days_elapsed=%d, '
+                'period=%s(%dd), full_periods=%d',
+                order_id, order['ship_name'], eligible_balance,
+                last_accrual.isoformat(), days_elapsed, period, period_days, full_periods)
 
     if full_periods == 0:
         return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': eligible_balance}
@@ -175,6 +186,9 @@ def accrue_interest_for_order(order_id):
             order_id=order_id
         )
 
+    logger.info('Order %s: accrued %d period(s), +%.2f ISK interest',
+                order_id, full_periods, total_new_interest)
+
     return {
         'periods_accrued': full_periods,
         'interest_added': total_new_interest,
@@ -189,10 +203,13 @@ def accrue_interest_all():
         "SELECT id FROM ship_orders WHERE status = 'active'"
     ).fetchall()
 
+    logger.info('Interest accrual: %d active order(s) to check', len(active_orders))
+
     results = []
     for order_row in active_orders:
         result = accrue_interest_for_order(order_row['id'])
         if result and result['periods_accrued'] > 0:
             results.append({'order_id': order_row['id'], **result})
 
+    logger.info('Interest accrual complete: %d order(s) accrued', len(results))
     return results

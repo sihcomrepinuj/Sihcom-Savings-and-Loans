@@ -10,12 +10,8 @@
                 data-bs-toggle="modal" data-bs-target="#distributeModal">
             Distribute Earnings
         </button>
-        <form method="POST" action="{{ url_for('admin_sync_wallet') }}" class="d-inline me-2">
+        <form method="POST" action="{{ url_for('admin_sync_wallet') }}" class="d-inline">
             <button type="submit" class="btn btn-outline-primary btn-sm">Sync Wallet</button>
-        </form>
-        <form method="POST" action="{{ url_for('admin_accrue_all') }}" class="d-inline"
-              onsubmit="return confirm('Accrue interest on all active orders?');">
-            <button type="submit" class="btn btn-outline-info btn-sm">Accrue All Interest</button>
         </form>
     </div>
 </div>
