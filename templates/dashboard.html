@@ -60,8 +60,8 @@
                         {{ "%.1f" | format(bal['progress']) }}%
                     </div>
                 </div>
-                {% if bal['eligible_balance'] is defined and bal['eligible_balance'] < bal['savings_balance'] %}
-                <small class="text-secondary">New deposits earn interest after 30 days</small>
+                {% if bal['effective_balance'] is defined and bal['effective_balance'] < bal['savings_balance'] %}
+                <small class="text-secondary">New deposits earn prorated interest until 30 days old</small>
                 {% endif %}
                 {% elif order['status'] == 'pending_approval' %}
                 <div class="mb-3">

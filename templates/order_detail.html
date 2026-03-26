@@ -55,10 +55,10 @@
                     </div>
                 </div>
 
-                {% if balance['eligible_balance'] is defined and balance['eligible_balance'] < balance['savings_balance'] %}
+                {% if balance['effective_balance'] is defined and balance['effective_balance'] < balance['savings_balance'] %}
                 <div class="alert border-secondary py-2 mb-3" style="background-color: #5f5f5f;">
-                    <small class="text-light">Earning interest on <strong class="text-white">{{ balance['eligible_balance'] | isk }}</strong>
-                    &mdash; new deposits earn interest after 30 days.</small>
+                    <small class="text-light">Earning interest on <strong class="text-white">{{ balance['effective_balance'] | isk }}</strong>
+                    &mdash; new deposits earn prorated interest until 30 days old.</small>
                 </div>
                 {% endif %}
 

@@ -12,26 +12,28 @@ PERIOD_DAYS = {
 }
 
 
-def _get_eligible_deposits(db, order_id):
-    """Sum deposits older than 30 days (eligible for interest)."""
-    row = db.execute(
-        "SELECT COALESCE(SUM(amount), 0) as total "
-        "FROM deposits WHERE order_id = ? AND deposit_date <= datetime('now', '-30 days')",
-        (order_id,)
-    ).fetchone()
+def _get_effective_balance(db, order_id):
+    """Compute weighted deposit balance for interest: deposits aged 30+ days
+    count fully, newer deposits are prorated by age/30."""
+    row = db.execute("""
+        SELECT COALESCE(SUM(
+            amount * MIN(julianday('now') - julianday(deposit_date), 30) / 30.0
+        ), 0) as total
+        FROM deposits WHERE order_id = ?
+    """, (order_id,)).fetchone()
     return float(row['total'])
 
 
 def calculate_current_balance(order):
     """Calculate the current savings balance including pending (un-accrued) interest.
 
-    Interest accrues only on the 'eligible balance': deposits older than 30 days
-    plus all previously accrued interest. New deposits still count toward
-    total progress but don't earn interest until 30 days after deposit.
+    Interest accrues on the 'effective balance': each deposit is weighted by
+    min(age_in_days / 30, 1.0), so newer deposits earn prorated interest.
+    Previously accrued interest always earns at the full rate.
 
     Returns a dict with:
       - savings_balance: all deposits + accrued interest
-      - eligible_balance: 30-day-old deposits + accrued interest (earns interest)
+      - effective_balance: age-weighted deposits + accrued interest (earns interest)
       - pending_interest: estimated interest since last accrual (not yet recorded)
       - total_balance: savings_balance + pending_interest
       - progress: percentage toward goal_price
@@ -43,9 +45,9 @@ def calculate_current_balance(order):
     accrued_interest = order['interest_earned']
     savings_balance = total_deposits + accrued_interest
 
-    # Only deposits older than 30 days earn interest
-    eligible_deposits = _get_eligible_deposits(db, order['id'])
-    eligible_balance = eligible_deposits + accrued_interest
+    # All deposits earn interest, weighted by age (prorated under 30 days)
+    effective_deposits = _get_effective_balance(db, order['id'])
+    effective_balance = effective_deposits + accrued_interest
 
     settings = models.get_interest_settings()
     rate = settings['interest_rate']
@@ -67,9 +69,9 @@ def calculate_current_balance(order):
     days_elapsed = (now - last_accrual).days
     full_periods = days_elapsed // period_days
 
-    # Compound interest for each un-recorded period on ELIGIBLE balance only
+    # Compound interest for each un-recorded period on EFFECTIVE balance only
     pending_interest = 0.0
-    temp_balance = eligible_balance
+    temp_balance = effective_balance
     for _ in range(full_periods):
         period_interest = temp_balance * rate
         pending_interest += period_interest
@@ -82,7 +84,7 @@ def calculate_current_balance(order):
 
     return {
         'savings_balance': savings_balance,
-        'eligible_balance': eligible_balance,
+        'effective_balance': effective_balance,
         'pending_interest': pending_interest,
         'total_balance': total_balance,
         'progress': min(progress, 100),
@@ -94,9 +96,9 @@ def calculate_current_balance(order):
 def accrue_interest_for_order(order_id):
     """Record interest accrual for all due periods on a single order.
 
-    Interest accrues only on the eligible balance: deposits older than 30 days
-    plus all previously accrued interest. Returns a dict with results or None
-    if order is not eligible.
+    Interest accrues on the effective balance: each deposit is weighted by
+    min(age_in_days / 30, 1.0), plus all previously accrued interest at full
+    rate. Returns a dict with results or None if order is not active.
     """
     db = database.get_db()
     order = db.execute('SELECT * FROM ship_orders WHERE id = ?', (order_id,)).fetchone()
@@ -109,13 +111,13 @@ def accrue_interest_for_order(order_id):
     period = settings['interest_period']
     period_days = PERIOD_DAYS.get(period, 30)
 
-    # Only deposits older than 30 days earn interest
-    eligible_deposits = _get_eligible_deposits(db, order_id)
-    eligible_balance = eligible_deposits + order['interest_earned']
+    # All deposits earn interest, weighted by age (prorated under 30 days)
+    effective_deposits = _get_effective_balance(db, order_id)
+    effective_balance = effective_deposits + order['interest_earned']
 
-    if eligible_balance <= 0:
-        logger.info('Order %s (%s): eligible_balance=0 (eligible_deposits=%.2f, interest_earned=%.2f)',
-                     order_id, order['ship_name'], eligible_deposits, order['interest_earned'])
+    if effective_balance <= 0:
+        logger.info('Order %s (%s): effective_balance=0 (effective_deposits=%.2f, interest_earned=%.2f)',
+                     order_id, order['ship_name'], effective_deposits, order['interest_earned'])
         return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': 0}
 
     # Find the last accrual date
@@ -133,16 +135,16 @@ def accrue_interest_for_order(order_id):
     days_elapsed = (now - last_accrual).days
     full_periods = days_elapsed // period_days
 
-    logger.info('Order %s (%s): eligible=%.2f, last_accrual=%s, days_elapsed=%d, '
+    logger.info('Order %s (%s): effective=%.2f, last_accrual=%s, days_elapsed=%d, '
                 'period=%s(%dd), full_periods=%d',
-                order_id, order['ship_name'], eligible_balance,
+                order_id, order['ship_name'], effective_balance,
                 last_accrual.isoformat(), days_elapsed, period, period_days, full_periods)
 
     if full_periods == 0:
-        return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': eligible_balance}
+        return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': effective_balance}
 
     total_new_interest = 0.0
-    balance = eligible_balance
+    balance = effective_balance
 
     for i in range(full_periods):
         period_interest = balance * rate
