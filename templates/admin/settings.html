@@ -59,16 +59,17 @@
                 <h5 class="mb-0">How Interest Works</h5>
             </div>
             <div class="card-body text-secondary">
-                <p>Interest compounds on each member's <strong>eligible balance</strong> (deposits older than 30 days + previously earned interest) every period.</p>
+                <p>Interest compounds on each member's <strong>effective balance</strong> every period.</p>
                 <p>
-                    <strong>30-day lag:</strong> New deposits do not earn interest until 30 days after the deposit date.
-                    This ensures members commit their ISK before it starts earning. All deposits still count toward the savings goal immediately.
+                    <strong>Proration:</strong> Deposits less than 30 days old earn interest at a reduced rate
+                    proportional to their age (e.g., a 15-day-old deposit earns at 50% of the rate).
+                    Deposits 30+ days old and all previously earned interest earn at the full rate.
                 </p>
                 <p class="mb-0">
-                    <strong>Example:</strong> At 5% monthly, a member deposits 1,000,000,000 ISK.
-                    For the first 30 days, no interest accrues. After 30 days the deposit becomes eligible,
-                    and the next accrual earns 50,000,000 ISK. The following month earns 52,500,000 ISK
-                    (5% of 1,050,000,000).
+                    <strong>Example:</strong> At 10% monthly, a member deposits 1,000,000,000 ISK.
+                    After 15 days, the effective balance is ~500,000,000 ISK (50% proration),
+                    earning ~50,000,000 ISK. Once the deposit is 30+ days old, the full 1B ISK
+                    earns 100,000,000 ISK per period.
                 </p>
             </div>
         </div>
