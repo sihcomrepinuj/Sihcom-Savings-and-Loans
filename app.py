@@ -767,6 +767,12 @@ def admin_order_detail(order_id):
     categories = models.get_catalog_categories()
     outstanding_credit_line = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
 
+    time_to_goal = interest.estimate_time_to_goal(order, balance_info)
+    if time_to_goal.get('days') is not None:
+        from datetime import date, timedelta
+        target = date.today() + timedelta(days=int(round(time_to_goal['days'])))
+        time_to_goal['target_date'] = target.strftime('%b %d, %Y')
+
     return render_template(
         'admin/order_detail.html',
         order=order,
@@ -776,6 +782,7 @@ def admin_order_detail(order_id):
         owner=user,
         categories=categories,
         outstanding_credit_line=outstanding_credit_line,
+        time_to_goal=time_to_goal,
     )
 
 

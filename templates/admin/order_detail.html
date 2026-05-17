@@ -76,6 +76,27 @@
                     </div>
                 </div>
 
+                {% if time_to_goal %}
+                  {% if time_to_goal['state'] == 'ok' %}
+                  <div class="mb-3 small">
+                      <div class="text-info">
+                          &#x23F1; Time to {{ order['ship_name'] }}:
+                          <strong>{{ time_to_goal['days'] | format_days_smart }}</strong>
+                          ({{ time_to_goal['target_date'] }})
+                      </div>
+                      <div class="text-secondary">
+                          Estimated, assuming no further deposits and current interest rate.
+                      </div>
+                  </div>
+                  {% elif time_to_goal['state'] == 'frozen' %}
+                  <div class="mb-3 small text-warning">
+                      Savings is fully frozen by an open credit line &mdash; no interest accruing.
+                  </div>
+                  {% elif time_to_goal['state'] == 'paused' %}
+                  <div class="mb-3 small text-secondary">Interest paused.</div>
+                  {% endif %}
+                {% endif %}
+
                 {% if order['notes'] %}
                 <div class="mt-2">
                     <small class="text-light">Notes:</small>
