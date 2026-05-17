@@ -82,6 +82,18 @@
                     <p class="text-white">{{ order['notes'] }}</p>
                 </div>
                 {% endif %}
+
+                {% if not order['type_id'] %}
+                <div class="alert alert-warning py-2 mt-3 mb-0 d-flex justify-content-between align-items-center">
+                    <span class="small">
+                        Ship <code>type_id</code> is missing on this order &mdash;
+                        completion badge won't render on the leaderboard.
+                    </span>
+                    <form method="POST" action="{{ url_for('admin_order_refresh_ship_data', order_id=order['id']) }}" class="ms-2">
+                        <button type="submit" class="btn btn-sm btn-warning">Refresh ship data</button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
 

@@ -212,6 +212,19 @@ def init_db():
         WHERE category IS NULL
     ''')
 
+    # Backfill type_id on existing orders from ship_catalog. Orders created before
+    # type_id was wired (or where ESI lookup failed) have NULL type_id, which makes
+    # the badge query skip them. Pull from the catalog where the ship name matches.
+    db.execute('''
+        UPDATE ship_orders SET type_id = (
+            SELECT sc.type_id FROM ship_catalog sc
+            WHERE sc.ship_name = ship_orders.ship_name
+              AND sc.type_id IS NOT NULL
+            LIMIT 1
+        )
+        WHERE type_id IS NULL
+    ''')
+
     # Normalize all affiliate deposit notes to plain "Savings Boost"
     db.execute("""
         UPDATE deposits

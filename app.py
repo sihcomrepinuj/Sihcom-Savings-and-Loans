@@ -930,6 +930,45 @@ def admin_deny_withdrawal(order_id):
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/order/<int:order_id>/refresh-ship-data', methods=['POST'])
+@admin_required
+def admin_order_refresh_ship_data(order_id):
+    """Re-look-up type_id (via Fuzzwork) and fill category from catalog for an order.
+    Used to fix older orders that pre-date type_id wiring so their badges render."""
+    order = models.get_order(order_id)
+    if not order:
+        abort(404)
+
+    type_id = esi.search_type_id(order['ship_name'])
+    category = order['category']
+    if not category:
+        catalog_match = database.get_db().execute(
+            "SELECT category FROM ship_catalog WHERE ship_name = ? AND category IS NOT NULL LIMIT 1",
+            (order['ship_name'],)
+        ).fetchone()
+        if catalog_match:
+            category = catalog_match['category']
+
+    if type_id is None and category == order['category']:
+        flash(
+            f'Could not refresh ship data for "{order["ship_name"]}" — '
+            f'Fuzzwork lookup failed. Check the spelling.',
+            'warning'
+        )
+        return redirect(url_for('admin_order_detail', order_id=order_id))
+
+    models.update_order_details(
+        order_id,
+        order['ship_name'],
+        order['goal_price'],
+        order['is_public'],
+        type_id=type_id if type_id is not None else order['type_id'],
+        category=category,
+    )
+    flash(f'Ship data refreshed for {order["ship_name"]}.', 'success')
+    return redirect(url_for('admin_order_detail', order_id=order_id))
+
+
 @app.route('/admin/order/<int:order_id>/complete-paid-directly', methods=['POST'])
 @admin_required
 def admin_complete_paid_directly(order_id):
