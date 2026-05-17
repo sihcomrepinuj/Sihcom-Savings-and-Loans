@@ -156,6 +156,28 @@ def ship_image_url(type_id, size=256):
     return esi.get_ship_image_url(type_id, size) if type_id else None
 
 
+@app.template_filter('format_days_smart')
+def format_days_smart(days):
+    """Format a float number of days as a smart-unit estimate string."""
+    if days is None:
+        return ''
+    days = max(0, int(round(days)))
+    if days < 30:
+        return f'~{days} day{"s" if days != 1 else ""}'
+    if days < 365:
+        months = days // 30
+        rem = days - months * 30
+        if rem == 0:
+            return f'~{months} month{"s" if months != 1 else ""}'
+        return f'~{months} month{"s" if months != 1 else ""} {rem} day{"s" if rem != 1 else ""}'
+    years = days // 365
+    rem_days = days - years * 365
+    months = rem_days // 30
+    if months == 0:
+        return f'~{years} year{"s" if years != 1 else ""}'
+    return f'~{years} year{"s" if years != 1 else ""} {months} month{"s" if months != 1 else ""}'
+
+
 @app.template_filter('badge_url')
 def badge_url_filter(category):
     """Return URL for a category badge image (supports .png or .svg)."""
@@ -389,6 +411,12 @@ def order_detail(order_id):
     user = models.get_user_by_id(order['user_id'])
     outstanding_credit_line = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
 
+    time_to_goal = interest.estimate_time_to_goal(order, balance_info)
+    if time_to_goal.get('days') is not None:
+        from datetime import date, timedelta
+        target = date.today() + timedelta(days=int(round(time_to_goal['days'])))
+        time_to_goal['target_date'] = target.strftime('%b %d, %Y')
+
     return render_template(
         'order_detail.html',
         order=order,
@@ -397,6 +425,7 @@ def order_detail(order_id):
         interest_logs=interest_logs,
         owner=user,
         outstanding_credit_line=outstanding_credit_line,
+        time_to_goal=time_to_goal,
     )
 
 

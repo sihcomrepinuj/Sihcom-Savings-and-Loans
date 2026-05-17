@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import datetime, timedelta
 import database
 import models
@@ -113,6 +114,44 @@ def calculate_current_balance(order):
         'remaining': remaining,
         'periods_due': full_periods,
     }
+
+
+def estimate_time_to_goal(order, balance_info):
+    """Estimate how long until compound interest alone funds the savings goal.
+
+    Returns dict with:
+      - state: one of 'ok', 'funded', 'paused', 'frozen', 'inactive'
+      - days:  float days remaining (only when state == 'ok')
+
+    Math: starting from total_balance (savings + pending interest) and an
+    earning base of effective_balance, each period adds effective_balance * r
+    to both. Solving total_balance + effective_balance * ((1+r)^n - 1) = goal:
+        n_periods = log(1 + (goal - total_balance) / effective_balance) / log(1+r)
+    """
+    if order['status'] != 'active':
+        return {'state': 'inactive', 'days': None}
+
+    if models.is_user_interest_paused(order['user_id']):
+        return {'state': 'paused', 'days': None}
+
+    settings = models.get_interest_settings()
+    rate = float(settings['interest_rate'])
+    if rate <= 0:
+        return {'state': 'paused', 'days': None}
+
+    goal = float(order['goal_price'])
+    total_balance = balance_info['total_balance']
+    effective_balance = balance_info['effective_balance']
+
+    if total_balance >= goal:
+        return {'state': 'funded', 'days': None}
+    if effective_balance <= 0:
+        return {'state': 'frozen', 'days': None}
+
+    period_days = PERIOD_DAYS.get(settings['interest_period'], 30)
+    growth_needed = 1 + (goal - total_balance) / effective_balance
+    n_periods = math.log(growth_needed) / math.log(1 + rate)
+    return {'state': 'ok', 'days': n_periods * period_days}
 
 
 def accrue_interest_for_order(order_id):
