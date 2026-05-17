@@ -1,0 +1,95 @@
+# Sihcom Savings and Loans — Codebase Notes for Future Agents
+
+A Flask app for an EVE Online corporation. Members save toward ship goals; the corp pays interest. As of 2026-05-16, also offers loans (admin-originated general loans + member-requested credit lines collateralized by savings).
+
+## Stack
+
+- Flask + Jinja2 (Python 3.13), no ORM — raw SQLite via `sqlite3.Row`
+- EVE SSO via `preston` for auth (members no scope; admin has wallet read scope)
+- Bootstrap 5 dark theme, vanilla JS
+- Deployed on Railway.app: single Gunicorn worker + persistent volume for SQLite (multi-worker breaks in-memory Flask sessions)
+- `apscheduler` for two background jobs: wallet sync + interest accrual
+
+## Files (entire app is in the project root)
+
+- `app.py` — all Flask routes (member + admin), template filters, scheduler setup
+- `models.py` — all data access functions; no ORM, just direct SQL via `database.get_db()`
+- `database.py` — `SCHEMA_SQL` (full schema), `_try_alter()` helper for migrations, `DEFAULT_SETTINGS`, `init_db()`
+- `interest.py` — savings accrual + loan accrual + frozen-collateral math
+- `wallet.py` — ESI wallet sync; auto-matches deposits to active loans (loan-first) then to goals
+- `esi.py` — EVE image and type-id helpers
+- `config.py` — env-driven config (`Config` class)
+- `templates/` — Jinja templates; admin templates under `templates/admin/`
+
+## Schema migrations
+
+SQLite, schema migrations via `_try_alter()` in `init_db()` — wraps `ALTER TABLE ADD COLUMN` and ignores duplicate-column errors. Always additive. Bring your own backfill if needed (see the `category` backfill near the bottom of `init_db`).
+
+To add a column or table:
+1. Add it to `SCHEMA_SQL` so fresh DBs get it
+2. Add a `_try_alter(db, "ALTER TABLE ... ADD COLUMN ...")` line in `init_db()` so existing DBs get it
+3. Backfill in `init_db()` if defaults aren't enough
+
+## Conventions
+
+- **One savings goal per user.** Enforced via `user_has_active_or_pending_order`.
+- **One loan per user.** Enforced via `get_open_loan_for_user` (covers `pending_disbursement` + `active`).
+- **No tests.** No test suite exists. Verify changes with the Flask test client manually (see commit `a06e102` for an example smoke-test script in the conversation history).
+- **No new comments unless they explain *why*.** Existing code follows this.
+- **Money amounts** are floats (ISK). Comparisons use a small tolerance (e.g. `<= 0.0001` for "paid in full"). Don't try to convert to integers — EVE wallet deltas have fractional ISK.
+- **Interest period** comes from `settings.interest_period` (one of `daily`, `weekly`, `biweekly`, `monthly`), mapping in `interest.PERIOD_DAYS`. Same period drives savings accrual, credit-line accrual, and general loan accrual.
+- **Deposit proration** for savings: deposits less than 30 days old earn at `age_days / 30` of the rate (see `_get_effective_balance`). Loans do not prorate.
+- **Wallet sync is the source of truth** for member-initiated deposits and loan payments. Auto-matches on sender's EVE character id. Outgoing ISK from the corp (e.g. loan disbursements) is NOT reconciled by the app — admin sends in-game and marks disbursed in the UI.
+- **Admin is a single character** (`Config.ADMIN_CHARACTER_ID`). Auth is session-based; the admin's `refresh_token` is used for ESI wallet calls.
+
+## Background jobs
+
+In `app.py`, gated on `not app.debug`:
+
+- **Wallet sync** every `WALLET_SYNC_INTERVAL` minutes (default 5)
+- **Interest accrual** every `INTEREST_ACCRUAL_INTERVAL` hours (default 6) + a one-off catch-up 30 seconds after boot
+
+Jobs run with `app.app_context()`. Single worker means single scheduler instance — don't add more workers without rethinking scheduling.
+
+## Loans data model (added 2026-05-16)
+
+Three tables:
+- `loans` — `product_type` is `credit_line` or `general`; `status` cycles `pending_disbursement` → `active` → `paid_in_full`; `interest_paused` allows per-loan pause; `principal` doubles as the original draw amount for credit lines.
+- `loan_payments` — every payment (wallet or manual). `source` is `wallet` or `manual`. `journal_id` links wallet-sourced payments back to `wallet_journal` for audit.
+- `loan_interest_log` — one row per accrued period, mirrors `interest_log` shape.
+
+Plus `users.interest_paused` (boolean; pauses both savings and loan accrual for that member) and `settings.general_loan_rate` (configurable, default `0.125`).
+
+## How loan interest math works
+
+- **General loan**: compounds on `current_balance` at `general_loan_rate` per period.
+- **Credit line**: compounds on `current_balance` at `interest_rate` (savings rate) per period.
+- **Savings with active credit line**: the savings effective balance is scaled by `max(0, savings - outstanding_loan) / savings`. Implementation: `_apply_frozen_collateral` in `interest.py`.
+- **Paused user**: short-circuits both `accrue_interest_for_order` and `accrue_interest_for_loan` to a no-op.
+- **Wallet payment to a borrower**: `wallet.py` calls `interest.accrue_interest_for_loan(loan_id)` *before* `record_loan_payment` so the borrower pays the up-to-date balance, not a stale one.
+
+## Important plan files
+
+- `docs/plans/2026-02-23-affiliate-distribution-impl.md` — Savings Boost (USD-to-ISK affiliate distribution)
+- `docs/plans/2026-03-26-prorated-interest-design.md`, `2026-03-26-prorated-interest-impl.md` — the per-deposit age weighting for savings
+- `docs/plans/2026-05-16-loans-design.md` — loans, credit lines, per-user pause, complete-paid-directly. Includes implementation-status notes and known gaps at the bottom.
+
+## Known gaps (next-agent worth-fixing)
+
+- **Withdrawal vs open credit line.** Members can request and admin can approve a savings withdrawal while a credit line is open against that savings. Either block at `request_withdrawal` (member side) when `get_outstanding_credit_line_balance_for_user > 0`, or warn at admin-approve. Same applies to goal cancel and goal completion: a closing goal doesn't update or close its linked credit line.
+- **No collateral release accounting.** The "frozen" portion of savings is computed dynamically each accrual run via `_apply_frozen_collateral`; there's no per-deposit flag. That's fine for the math but means there's no audit trail of *which* ISK is "frozen".
+- **No manual loan payment beyond admin UI.** Members can't self-record a manual loan payment. That's deliberate — wallet sync is the canonical path — but worth confirming if user feedback diverges.
+
+## Local dev
+
+- `pip install -r requirements.txt`
+- Set env vars: `EVE_CLIENT_ID`, `EVE_CLIENT_SECRET`, `EVE_CALLBACK_URL`, `ADMIN_CHARACTER_ID`. `FLASK_SECRET_KEY` recommended. `DATA_DIR` for db path.
+- `python app.py` (uses Flask debug server; background jobs disabled in debug)
+
+## Deferred features
+
+The user has explicitly deferred these to future sessions:
+
+- Bank-website-style UI redesign (Fifth Third Bank-ish aesthetic)
+- Bonds product
+- Leaderboard enhancements (the leaderboard is the most-loved feature, so polish has high payoff)

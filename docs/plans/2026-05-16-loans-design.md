@@ -113,3 +113,31 @@ Manual end-to-end checks once implemented:
 - Bank-website UI redesign (visual/IA overhaul; will inform future feature pages).
 - Bonds product.
 - Leaderboard enhancements.
+
+## Implementation status
+
+Shipped in commit `a06e102` (2026-05-16) as one change.
+
+**Touched files:**
+
+- `database.py` — three new tables (`loans`, `loan_payments`, `loan_interest_log`), `users.interest_paused` column, `settings.general_loan_rate` default `0.125`. All additive via `_try_alter()` so existing databases migrate cleanly.
+- `models.py` — loan CRUD plus `get_open_loan_for_user`, `record_loan_payment` (handles overpay and auto-close to `paid_in_full`), `get_outstanding_credit_line_balance_for_user`, `set_user_interest_paused`, `get_total_savings_balance_for_user`, `get_loan_settings`.
+- `interest.py` — `_apply_frozen_collateral` scales the savings effective balance by `(savings - outstanding_credit_line) / savings` proportionally; `accrue_interest_for_order` short-circuits on paused users; new `accrue_interest_for_loan` and `calculate_loan_pending_interest`; `accrue_interest_all` now returns `{'orders': [...], 'loans': [...]}`.
+- `wallet.py` — auto-match runs loan accrual first (so borrower pays current balance), then `record_loan_payment`, then routes any remainder to the active goal. Edge case where neither applies falls through to unmatched.
+- `app.py` — new routes: `/loan/<id>`, `/loan/request-draw`, `/admin/loans`, `/admin/loan/<id>`, `/admin/loan/new`, `/admin/loan/<id>/{disburse,toggle-interest-pause,manual-payment}`, `/admin/user/<id>/toggle-interest-pause`, `/admin/order/<id>/complete-paid-directly`. Dashboard route now passes loan context. Admin settings handles `general_loan_rate`.
+- Templates — new `loan_detail.html`, `admin/loans.html`, `admin/loan_detail.html`. Updated `dashboard.html`, `base.html`, `admin/users.html`, `admin/order_detail.html`, `admin/settings.html`.
+
+**Known gaps (worth a follow-up):**
+
+- **No withdrawal block while a credit line is open.** A member can request withdrawal of their savings goal while collateralizing a credit line; if admin approves, the loan becomes effectively unsecured. Either block at the request step (in `request_withdrawal`) for users with `get_outstanding_credit_line_balance_for_user > 0`, or surface the conflict at admin-approve.
+- **No collateral release on goal cancel/completion.** Same shape: if the goal closes for any reason while a credit line is open, the loan keeps its balance but the collateral basis is gone.
+
+**Verified locally:**
+
+- Schema migration runs clean on a fresh DB.
+- All member and admin pages render 200 via the Flask test client.
+- Loan lifecycle (request → disburse → partial pay → overpay → auto-close → concurrency reset) all pass.
+- Frozen-collateral math: 0% draw = full accrual; 50% draw = half effective; 100% draw = no accrual.
+- Paused users are skipped on both savings and loan accrual.
+
+Not yet verified against a live EVE wallet sync — that's the next thing to exercise on staging.
