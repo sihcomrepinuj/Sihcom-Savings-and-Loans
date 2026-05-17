@@ -25,12 +25,28 @@ def _get_effective_balance(db, order_id):
     return float(row['total'])
 
 
+def _apply_frozen_collateral(user_id, savings_balance, effective_balance):
+    """Reduce the effective (interest-earning) balance by the user's outstanding
+    credit-line balance. The collateralized portion of savings is frozen and
+    stops accruing. Returns the adjusted effective balance.
+    """
+    if savings_balance <= 0:
+        return 0.0
+    frozen = models.get_outstanding_credit_line_balance_for_user(user_id)
+    if frozen <= 0:
+        return effective_balance
+    free_ratio = max(0.0, savings_balance - frozen) / savings_balance
+    return effective_balance * free_ratio
+
+
 def calculate_current_balance(order):
     """Calculate the current savings balance including pending (un-accrued) interest.
 
     Interest accrues on the 'effective balance': each deposit is weighted by
     min(age_in_days / 30, 1.0), so newer deposits earn prorated interest.
-    Previously accrued interest always earns at the full rate.
+    Previously accrued interest always earns at the full rate. If the user has
+    an outstanding credit-line balance, that portion of savings is frozen
+    (does not accrue).
 
     Returns a dict with:
       - savings_balance: all deposits + accrued interest
@@ -49,6 +65,11 @@ def calculate_current_balance(order):
     # All deposits earn interest, weighted by age (prorated under 30 days)
     effective_deposits = _get_effective_balance(db, order['id'])
     effective_balance = effective_deposits + accrued_interest
+
+    # Frozen collateral: outstanding credit-line balance reduces the earning portion
+    effective_balance = _apply_frozen_collateral(
+        order['user_id'], savings_balance, effective_balance
+    )
 
     settings = models.get_interest_settings()
     rate = settings['interest_rate']
@@ -99,12 +120,19 @@ def accrue_interest_for_order(order_id):
 
     Interest accrues on the effective balance: each deposit is weighted by
     min(age_in_days / 30, 1.0), plus all previously accrued interest at full
-    rate. Returns a dict with results or None if order is not active.
+    rate. If the user has paused interest, the order is skipped. If the user
+    has an outstanding credit-line balance, that portion of savings is frozen
+    and the earning base is reduced accordingly. Returns a dict with results
+    or None if order is not active or user is paused.
     """
     db = database.get_db()
     order = db.execute('SELECT * FROM ship_orders WHERE id = ?', (order_id,)).fetchone()
     if not order or order['status'] != 'active':
         logger.debug('Order %s: skip (status=%s)', order_id, order['status'] if order else 'NOT FOUND')
+        return None
+
+    if models.is_user_interest_paused(order['user_id']):
+        logger.info('Order %s: user_id=%s has paused interest, skipping', order_id, order['user_id'])
         return None
 
     settings = models.get_interest_settings()
@@ -115,6 +143,12 @@ def accrue_interest_for_order(order_id):
     # All deposits earn interest, weighted by age (prorated under 30 days)
     effective_deposits = _get_effective_balance(db, order_id)
     effective_balance = effective_deposits + order['interest_earned']
+
+    # Frozen collateral: outstanding credit-line balance reduces the earning portion
+    savings_balance = order['amount_deposited'] + order['interest_earned']
+    effective_balance = _apply_frozen_collateral(
+        order['user_id'], savings_balance, effective_balance
+    )
 
     if effective_balance <= 0:
         logger.info('Order %s (%s): effective_balance=0 (effective_deposits=%.2f, interest_earned=%.2f)',
@@ -199,20 +233,179 @@ def accrue_interest_for_order(order_id):
     }
 
 
+def calculate_loan_pending_interest(loan):
+    """Estimate interest that will be accrued on a loan at the next scheduled
+    run. Mirrors calculate_current_balance for goals.
+
+    Returns a dict with:
+      - current_balance: balance as recorded
+      - pending_interest: estimated interest since last accrual
+      - projected_balance: current_balance + pending_interest
+      - periods_due: number of full periods since last accrual
+    """
+    db = database.get_db()
+    settings = models.get_interest_settings()
+    loan_settings = models.get_loan_settings()
+    period_days = PERIOD_DAYS.get(settings['interest_period'], 30)
+
+    if loan['product_type'] == 'credit_line':
+        rate = settings['interest_rate']
+    else:
+        rate = loan_settings['general_loan_rate']
+
+    last_log = db.execute(
+        'SELECT accrued_at FROM loan_interest_log WHERE loan_id = ? '
+        'ORDER BY accrued_at DESC LIMIT 1', (loan['id'],)
+    ).fetchone()
+
+    if last_log:
+        last_accrual = datetime.fromisoformat(last_log['accrued_at'])
+    elif loan['disbursed_at']:
+        last_accrual = datetime.fromisoformat(loan['disbursed_at'])
+    else:
+        last_accrual = datetime.fromisoformat(loan['created_at'])
+
+    days_elapsed = (datetime.utcnow() - last_accrual).days
+    full_periods = days_elapsed // period_days
+
+    pending = 0.0
+    balance = float(loan['current_balance'])
+    for _ in range(full_periods):
+        period_interest = balance * rate
+        pending += period_interest
+        balance += period_interest
+
+    return {
+        'current_balance': float(loan['current_balance']),
+        'pending_interest': pending,
+        'projected_balance': float(loan['current_balance']) + pending,
+        'periods_due': full_periods,
+    }
+
+
+def accrue_interest_for_loan(loan_id):
+    """Record interest accrual for all due periods on a single loan.
+
+    Skips if loan is not active, the loan itself has interest_paused, or the
+    user has interest_paused. Credit-line loans use the savings rate;
+    general loans use general_loan_rate. Returns a dict with results or None.
+    """
+    db = database.get_db()
+    loan = db.execute('SELECT * FROM loans WHERE id = ?', (loan_id,)).fetchone()
+    if not loan or loan['status'] != 'active':
+        logger.debug('Loan %s: skip (status=%s)', loan_id,
+                     loan['status'] if loan else 'NOT FOUND')
+        return None
+
+    if loan['interest_paused']:
+        logger.info('Loan %s: interest paused, skipping', loan_id)
+        return None
+
+    if models.is_user_interest_paused(loan['user_id']):
+        logger.info('Loan %s: user_id=%s has paused interest, skipping',
+                    loan_id, loan['user_id'])
+        return None
+
+    settings = models.get_interest_settings()
+    loan_settings = models.get_loan_settings()
+    period_days = PERIOD_DAYS.get(settings['interest_period'], 30)
+
+    if loan['product_type'] == 'credit_line':
+        rate = settings['interest_rate']
+    else:
+        rate = loan_settings['general_loan_rate']
+
+    last_log = db.execute(
+        'SELECT accrued_at FROM loan_interest_log WHERE loan_id = ? '
+        'ORDER BY accrued_at DESC LIMIT 1', (loan_id,)
+    ).fetchone()
+
+    if last_log:
+        last_accrual = datetime.fromisoformat(last_log['accrued_at'])
+    elif loan['disbursed_at']:
+        last_accrual = datetime.fromisoformat(loan['disbursed_at'])
+    else:
+        last_accrual = datetime.fromisoformat(loan['created_at'])
+
+    now = datetime.utcnow()
+    days_elapsed = (now - last_accrual).days
+    full_periods = days_elapsed // period_days
+
+    logger.info('Loan %s (%s): balance=%.2f, last_accrual=%s, days_elapsed=%d, '
+                'period_days=%d, full_periods=%d',
+                loan_id, loan['product_type'], loan['current_balance'],
+                last_accrual.isoformat(), days_elapsed, period_days, full_periods)
+
+    if full_periods == 0:
+        return {'periods_accrued': 0, 'interest_added': 0,
+                'new_balance': float(loan['current_balance'])}
+
+    balance = float(loan['current_balance'])
+    total_new_interest = 0.0
+
+    for i in range(full_periods):
+        period_interest = balance * rate
+        accrual_time = last_accrual + timedelta(days=period_days * (i + 1))
+
+        db.execute(
+            'INSERT INTO loan_interest_log (loan_id, amount, balance_before, '
+            'balance_after, accrued_at) VALUES (?, ?, ?, ?, ?)',
+            (loan_id, period_interest, balance, balance + period_interest,
+             accrual_time.isoformat())
+        )
+
+        balance += period_interest
+        total_new_interest += period_interest
+
+    db.execute(
+        'UPDATE loans SET current_balance = ? WHERE id = ?',
+        (balance, loan_id)
+    )
+    db.commit()
+
+    models.create_notification(
+        user_id=loan['user_id'],
+        notification_type='loan_interest_accrued',
+        message=f'{total_new_interest:,.2f} ISK interest accrued on your loan '
+                f'over {full_periods} period(s). New balance: {balance:,.2f} ISK.',
+    )
+
+    logger.info('Loan %s: accrued %d period(s), +%.2f ISK interest',
+                loan_id, full_periods, total_new_interest)
+
+    return {
+        'periods_accrued': full_periods,
+        'interest_added': total_new_interest,
+        'new_balance': balance,
+    }
+
+
 def accrue_interest_all():
-    """Accrue interest for all active orders. Returns summary."""
+    """Accrue interest for all active orders and active loans. Returns a dict
+    with 'orders' and 'loans' summary lists."""
     db = database.get_db()
     active_orders = db.execute(
         "SELECT id FROM ship_orders WHERE status = 'active'"
     ).fetchall()
+    active_loans = db.execute(
+        "SELECT id FROM loans WHERE status = 'active'"
+    ).fetchall()
 
-    logger.info('Interest accrual: %d active order(s) to check', len(active_orders))
+    logger.info('Interest accrual: %d active order(s), %d active loan(s) to check',
+                len(active_orders), len(active_loans))
 
-    results = []
+    order_results = []
     for order_row in active_orders:
         result = accrue_interest_for_order(order_row['id'])
         if result and result['periods_accrued'] > 0:
-            results.append({'order_id': order_row['id'], **result})
+            order_results.append({'order_id': order_row['id'], **result})
 
-    logger.info('Interest accrual complete: %d order(s) accrued', len(results))
-    return results
+    loan_results = []
+    for loan_row in active_loans:
+        result = accrue_interest_for_loan(loan_row['id'])
+        if result and result['periods_accrued'] > 0:
+            loan_results.append({'loan_id': loan_row['id'], **result})
+
+    logger.info('Interest accrual complete: %d order(s), %d loan(s) accrued',
+                len(order_results), len(loan_results))
+    return {'orders': order_results, 'loans': loan_results}

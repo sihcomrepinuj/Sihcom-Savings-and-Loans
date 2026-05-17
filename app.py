@@ -63,15 +63,19 @@ def _scheduled_wallet_sync():
 
 
 def _scheduled_interest_accrual():
-    """Background job: accrue interest on all active orders."""
+    """Background job: accrue interest on all active orders and loans."""
     with app.app_context():
         try:
             results = interest.accrue_interest_all()
-            if results:
-                total = sum(r['interest_added'] for r in results)
+            order_results = results['orders']
+            loan_results = results['loans']
+            if order_results or loan_results:
+                order_total = sum(r['interest_added'] for r in order_results)
+                loan_total = sum(r['interest_added'] for r in loan_results)
                 logger.info(
-                    f"Scheduled interest accrual: {len(results)} order(s), "
-                    f"{total:,.2f} ISK total"
+                    f"Scheduled interest accrual: "
+                    f"{len(order_results)} order(s) +{order_total:,.2f} ISK, "
+                    f"{len(loan_results)} loan(s) +{loan_total:,.2f} ISK"
                 )
             else:
                 logger.info('Scheduled interest accrual: no interest due')
@@ -306,12 +310,30 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    orders = models.get_orders_for_user(session['user_id'])
+    user_id = session['user_id']
+    orders = models.get_orders_for_user(user_id)
     balances = {}
     for order in orders:
         if order['status'] in ('active', 'withdrawal_pending'):
             balances[order['id']] = interest.calculate_current_balance(order)
-    return render_template('dashboard.html', orders=orders, balances=balances)
+
+    open_loan = models.get_open_loan_for_user(user_id)
+    loan_pending = None
+    if open_loan and open_loan['status'] == 'active':
+        loan_pending = interest.calculate_loan_pending_interest(open_loan)
+
+    total_savings = models.get_total_savings_balance_for_user(user_id)
+    can_request_credit_line = (open_loan is None) and (total_savings > 0)
+
+    return render_template(
+        'dashboard.html',
+        orders=orders,
+        balances=balances,
+        open_loan=open_loan,
+        loan_pending=loan_pending,
+        total_savings=total_savings,
+        can_request_credit_line=can_request_credit_line,
+    )
 
 
 @app.route('/catalog')
@@ -436,6 +458,75 @@ def notifications():
     notifs = models.get_recent_notifications(session['user_id'], limit=50)
     models.mark_notifications_read(session['user_id'])
     return render_template('notifications.html', notifications=notifs)
+
+
+# --- Member: Loans ---
+
+@app.route('/loan/<int:loan_id>')
+@login_required
+def loan_detail(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    if loan['user_id'] != session['user_id'] and not session.get('is_admin'):
+        abort(403)
+
+    pending = None
+    if loan['status'] == 'active':
+        pending = interest.calculate_loan_pending_interest(loan)
+
+    payments = models.get_loan_payments(loan_id)
+    interest_logs = models.get_loan_interest_logs(loan_id)
+    owner = models.get_user_by_id(loan['user_id'])
+
+    settings = models.get_interest_settings()
+    loan_settings = models.get_loan_settings()
+    if loan['product_type'] == 'credit_line':
+        rate = settings['interest_rate']
+    else:
+        rate = loan_settings['general_loan_rate']
+
+    return render_template(
+        'loan_detail.html',
+        loan=loan,
+        pending=pending,
+        payments=payments,
+        interest_logs=interest_logs,
+        owner=owner,
+        rate=rate,
+        period=settings['interest_period'],
+    )
+
+
+@app.route('/loan/request-draw', methods=['POST'])
+@login_required
+def request_credit_line_draw():
+    user_id = session['user_id']
+    if models.get_open_loan_for_user(user_id):
+        flash('You already have an open loan. Pay it off before requesting another.', 'warning')
+        return redirect(url_for('dashboard'))
+
+    amount = request.form.get('amount', type=float)
+    if not amount or amount <= 0:
+        flash('Please enter a valid draw amount.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    savings_balance = models.get_total_savings_balance_for_user(user_id)
+    if savings_balance <= 0:
+        flash('You need a positive savings balance to draw a credit line.', 'warning')
+        return redirect(url_for('dashboard'))
+    if amount > savings_balance:
+        flash(f'Draw amount cannot exceed your savings balance of {savings_balance:,.2f} ISK.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    loan_id = models.create_loan(
+        user_id=user_id,
+        product_type='credit_line',
+        amount=amount,
+        status='pending_disbursement',
+    )
+    flash(f'Credit line draw of {amount:,.2f} ISK requested. Awaiting admin disbursement.', 'success')
+    return redirect(url_for('loan_detail', loan_id=loan_id))
 
 
 # --- Admin routes ---
@@ -807,6 +898,220 @@ def admin_deny_withdrawal(order_id):
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/order/<int:order_id>/complete-paid-directly', methods=['POST'])
+@admin_required
+def admin_complete_paid_directly(order_id):
+    """Danger zone: admin marks a goal as completed because the user was paid
+    out their balance directly (outside the wallet)."""
+    order = models.get_order(order_id)
+    if not order:
+        abort(404)
+    if order['status'] not in ('active', 'withdrawal_pending'):
+        flash('Only active or withdrawal-pending goals can be marked completed.', 'warning')
+        return redirect(url_for('admin_order_detail', order_id=order_id))
+
+    models.update_order_status(order_id, 'completed')
+    models.create_notification(
+        user_id=order['user_id'],
+        notification_type='goal_completed',
+        message=f'Your savings goal for {order["ship_name"]} has been marked complete '
+                f'by the admin (direct payout).',
+        order_id=order_id,
+    )
+    flash(f'Goal for {order["ship_name"]} marked as completed (direct payout).', 'success')
+    return redirect(url_for('admin_order_detail', order_id=order_id))
+
+
+# --- Admin: User interest pause ---
+
+@app.route('/admin/user/<int:user_id>/toggle-interest-pause', methods=['POST'])
+@admin_required
+def admin_toggle_user_interest_pause(user_id):
+    user = models.get_user_by_id(user_id)
+    if not user:
+        abort(404)
+    paused = request.form.get('paused') == '1'
+    models.set_user_interest_paused(user_id, paused)
+    if paused:
+        flash(f'Interest accrual paused for {user["character_name"]}.', 'info')
+    else:
+        flash(f'Interest accrual resumed for {user["character_name"]}.', 'success')
+    return redirect(request.referrer or url_for('admin_users'))
+
+
+# --- Admin: Loans ---
+
+@app.route('/admin/loans')
+@admin_required
+def admin_loans():
+    pending_loans = models.get_pending_disbursement_loans()
+    active_loans = models.get_active_loans()
+    all_loans = models.get_all_loans()
+    users = models.get_all_users()
+    loan_settings = models.get_loan_settings()
+    settings = models.get_interest_settings()
+    return render_template(
+        'admin/loans.html',
+        pending_loans=pending_loans,
+        active_loans=active_loans,
+        all_loans=all_loans,
+        users=users,
+        loan_settings=loan_settings,
+        settings=settings,
+    )
+
+
+@app.route('/admin/loan/<int:loan_id>')
+@admin_required
+def admin_loan_detail(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    pending = None
+    if loan['status'] == 'active':
+        pending = interest.calculate_loan_pending_interest(loan)
+    payments = models.get_loan_payments(loan_id)
+    interest_logs = models.get_loan_interest_logs(loan_id)
+    owner = models.get_user_by_id(loan['user_id'])
+    settings = models.get_interest_settings()
+    loan_settings = models.get_loan_settings()
+    if loan['product_type'] == 'credit_line':
+        rate = settings['interest_rate']
+    else:
+        rate = loan_settings['general_loan_rate']
+    return render_template(
+        'admin/loan_detail.html',
+        loan=loan,
+        pending=pending,
+        payments=payments,
+        interest_logs=interest_logs,
+        owner=owner,
+        rate=rate,
+        period=settings['interest_period'],
+    )
+
+
+@app.route('/admin/loan/new', methods=['POST'])
+@admin_required
+def admin_create_general_loan():
+    user_id = request.form.get('user_id', type=int)
+    amount = request.form.get('amount', type=float)
+    if not user_id or not amount or amount <= 0:
+        flash('Please select a member and enter a valid amount.', 'danger')
+        return redirect(url_for('admin_loans'))
+
+    user = models.get_user_by_id(user_id)
+    if not user:
+        flash('Member not found.', 'danger')
+        return redirect(url_for('admin_loans'))
+
+    if models.get_open_loan_for_user(user_id):
+        flash(f'{user["character_name"]} already has an open loan. '
+              f'They must pay it off first.', 'warning')
+        return redirect(url_for('admin_loans'))
+
+    loan_id = models.create_loan(
+        user_id=user_id,
+        product_type='general',
+        amount=amount,
+        status='active',
+    )
+    models.create_notification(
+        user_id=user_id,
+        notification_type='loan_disbursed',
+        message=f'A general loan of {amount:,.2f} ISK has been issued to you. '
+                f'Send ISK to the corp wallet to repay.',
+    )
+    flash(f'General loan of {amount:,.2f} ISK created for {user["character_name"]}. '
+          f'Send ISK in-game.', 'success')
+    return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+
+@app.route('/admin/loan/<int:loan_id>/disburse', methods=['POST'])
+@admin_required
+def admin_disburse_loan(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    if loan['status'] != 'pending_disbursement':
+        flash('This loan is not pending disbursement.', 'warning')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    models.mark_loan_disbursed(loan_id)
+    models.create_notification(
+        user_id=loan['user_id'],
+        notification_type='loan_disbursed',
+        message=f'Your credit line draw of {loan["principal"]:,.2f} ISK has been disbursed. '
+                f'Collateral is now frozen on your savings.',
+    )
+    flash(f'Loan #{loan_id} marked as disbursed.', 'success')
+    return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+
+@app.route('/admin/loan/<int:loan_id>/toggle-interest-pause', methods=['POST'])
+@admin_required
+def admin_toggle_loan_interest_pause(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    paused = request.form.get('paused') == '1'
+    models.set_loan_interest_paused(loan_id, paused)
+    if paused:
+        flash(f'Interest accrual paused on loan #{loan_id}.', 'info')
+    else:
+        flash(f'Interest accrual resumed on loan #{loan_id}.', 'success')
+    return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+
+@app.route('/admin/loan/<int:loan_id>/manual-payment', methods=['POST'])
+@admin_required
+def admin_loan_manual_payment(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    if loan['status'] != 'active':
+        flash('Can only record payments on active loans.', 'warning')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    amount = request.form.get('amount', type=float)
+    note = request.form.get('note', '').strip() or None
+    if not amount or amount <= 0:
+        flash('Please enter a valid payment amount.', 'danger')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    # Accrue first so the borrower pays the up-to-date balance
+    interest.accrue_interest_for_loan(loan_id)
+    loan = models.get_loan(loan_id)
+    if loan['status'] != 'active':
+        flash('Loan is no longer active after accrual; payment not applied.', 'warning')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    result = models.record_loan_payment(
+        loan_id=loan_id,
+        amount=amount,
+        source='manual',
+        recorded_by=session['user_id'],
+        note=note,
+    )
+    models.create_notification(
+        user_id=loan['user_id'],
+        notification_type='loan_payment_recorded',
+        message=f'{result["applied"]:,.2f} ISK applied to your loan (manual). '
+                f'Remaining balance: {result["new_balance"]:,.2f} ISK.',
+    )
+    if result['paid_in_full']:
+        models.create_notification(
+            user_id=loan['user_id'],
+            notification_type='loan_paid_in_full',
+            message='Your loan has been paid in full. Frozen savings collateral is released.',
+        )
+    msg = f'Recorded {result["applied"]:,.2f} ISK manual payment.'
+    if result['remainder'] > 0:
+        msg += f' {result["remainder"]:,.2f} ISK exceeded balance (no overpayment recorded).'
+    flash(msg, 'success')
+    return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+
 # --- Admin: Wallet Sync ---
 
 @app.route('/admin/sync-wallet', methods=['POST'])
@@ -907,6 +1212,15 @@ def admin_settings():
                 models.set_setting('interest_period', period)
                 flash('Settings updated.', 'success')
 
+        # Loan settings (only when that form is submitted)
+        if 'general_loan_rate' in request.form:
+            loan_rate = request.form.get('general_loan_rate', type=float)
+            if loan_rate is None or loan_rate < 0 or loan_rate > 1:
+                flash('General loan rate must be between 0 and 1 (e.g. 0.125 for 12.5%).', 'danger')
+            else:
+                models.set_setting('general_loan_rate', str(loan_rate))
+                flash('Loan settings updated.', 'success')
+
         # Affiliate settings (only when that form is submitted)
         if 'usd_to_isk_ratio' in request.form:
             ratio = request.form.get('usd_to_isk_ratio', type=float)
@@ -919,8 +1233,14 @@ def admin_settings():
         return redirect(url_for('admin_settings'))
 
     settings = models.get_interest_settings()
+    loan_settings = models.get_loan_settings()
     affiliate = models.get_affiliate_settings()
-    return render_template('admin/settings.html', settings=settings, affiliate=affiliate)
+    return render_template(
+        'admin/settings.html',
+        settings=settings,
+        loan_settings=loan_settings,
+        affiliate=affiliate,
+    )
 
 
 # --- Admin: Affiliate Distribution ---

@@ -288,6 +288,17 @@
                 <h5 class="mb-0 text-danger">Danger Zone</h5>
             </div>
             <div class="card-body">
+                {% if order['status'] in ('active', 'withdrawal_pending') %}
+                <form method="POST" action="{{ url_for('admin_complete_paid_directly', order_id=order['id']) }}"
+                      class="mb-2"
+                      onsubmit="return confirm('Mark this goal complete? Use this when you have paid out the balance directly to {{ owner['character_name'] }} outside the wallet.');">
+                    <button type="submit" class="btn btn-outline-warning w-100">Complete (Paid Directly)</button>
+                </form>
+                <small class="text-light d-block mb-3">
+                    Use when the member has been paid out directly (in-game ship, contract, etc.).
+                    Marks the goal completed without recording a deposit.
+                </small>
+                {% endif %}
                 <form method="POST" action="{{ url_for('admin_cancel_order', order_id=order['id']) }}"
                       onsubmit="return confirm('Cancel this savings goal? This cannot be undone.');">
                     <button type="submit" class="btn btn-outline-danger w-100">Cancel Goal</button>

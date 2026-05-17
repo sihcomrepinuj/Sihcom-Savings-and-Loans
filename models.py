@@ -404,6 +404,12 @@ def get_interest_settings():
     }
 
 
+def get_loan_settings():
+    return {
+        'general_loan_rate': float(get_setting('general_loan_rate') or '0.125'),
+    }
+
+
 def get_affiliate_settings():
     return {
         'usd_to_isk_ratio': float(get_setting('usd_to_isk_ratio') or '1000000000'),
@@ -453,3 +459,214 @@ def mark_notifications_read(user_id):
         (user_id,)
     )
     db.commit()
+
+
+# --- User interest pause ---
+
+def set_user_interest_paused(user_id, paused):
+    """Pause or unpause both savings and loan interest accrual for a user."""
+    db = database.get_db()
+    db.execute(
+        'UPDATE users SET interest_paused = ? WHERE id = ?',
+        (1 if paused else 0, user_id)
+    )
+    db.commit()
+
+
+def is_user_interest_paused(user_id):
+    db = database.get_db()
+    row = db.execute(
+        'SELECT interest_paused FROM users WHERE id = ?', (user_id,)
+    ).fetchone()
+    return bool(row['interest_paused']) if row else False
+
+
+# --- Savings helpers (used for credit line eligibility / collateral) ---
+
+def get_total_savings_balance_for_user(user_id):
+    """Sum of active goals' amount_deposited + interest_earned (recorded only,
+    not pending). Used for credit-line draw eligibility and collateral."""
+    db = database.get_db()
+    row = db.execute(
+        "SELECT COALESCE(SUM(amount_deposited + interest_earned), 0) AS total "
+        "FROM ship_orders WHERE user_id = ? AND status = 'active'",
+        (user_id,)
+    ).fetchone()
+    return float(row['total'])
+
+
+# --- Loans ---
+
+def create_loan(user_id, product_type, amount, status='pending_disbursement'):
+    """Create a new loan record. Returns the new loan_id.
+
+    product_type is 'credit_line' or 'general'.
+    status is 'pending_disbursement' (credit line awaiting admin) or 'active'
+    (general loan, originated and disbursed by admin in one step).
+    """
+    db = database.get_db()
+    disbursed_at = "datetime('now')" if status == 'active' else None
+    if disbursed_at:
+        db.execute(
+            "INSERT INTO loans (user_id, product_type, principal, current_balance, "
+            "status, disbursed_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
+            (user_id, product_type, amount, amount, status)
+        )
+    else:
+        db.execute(
+            "INSERT INTO loans (user_id, product_type, principal, current_balance, status) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, product_type, amount, amount, status)
+        )
+    db.commit()
+    return db.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+
+def get_loan(loan_id):
+    db = database.get_db()
+    return db.execute('SELECT * FROM loans WHERE id = ?', (loan_id,)).fetchone()
+
+
+def get_loans_for_user(user_id):
+    db = database.get_db()
+    return db.execute(
+        'SELECT * FROM loans WHERE user_id = ? ORDER BY created_at DESC',
+        (user_id,)
+    ).fetchall()
+
+
+def get_open_loan_for_user(user_id):
+    """Return the user's currently-open loan (pending_disbursement or active),
+    or None. Enforces 'one loan at a time' rule."""
+    db = database.get_db()
+    return db.execute(
+        "SELECT * FROM loans WHERE user_id = ? "
+        "AND status IN ('pending_disbursement', 'active') LIMIT 1",
+        (user_id,)
+    ).fetchone()
+
+
+def get_active_loans():
+    """All loans currently active (excludes pending_disbursement and paid_in_full)."""
+    db = database.get_db()
+    return db.execute(
+        "SELECT l.*, u.character_name FROM loans l "
+        "JOIN users u ON l.user_id = u.id "
+        "WHERE l.status = 'active' ORDER BY l.created_at DESC"
+    ).fetchall()
+
+
+def get_pending_disbursement_loans():
+    db = database.get_db()
+    return db.execute(
+        "SELECT l.*, u.character_name FROM loans l "
+        "JOIN users u ON l.user_id = u.id "
+        "WHERE l.status = 'pending_disbursement' ORDER BY l.created_at ASC"
+    ).fetchall()
+
+
+def get_all_loans():
+    db = database.get_db()
+    return db.execute(
+        "SELECT l.*, u.character_name FROM loans l "
+        "JOIN users u ON l.user_id = u.id "
+        "ORDER BY l.created_at DESC"
+    ).fetchall()
+
+
+def mark_loan_disbursed(loan_id):
+    db = database.get_db()
+    db.execute(
+        "UPDATE loans SET status = 'active', disbursed_at = datetime('now') "
+        "WHERE id = ? AND status = 'pending_disbursement'",
+        (loan_id,)
+    )
+    db.commit()
+
+
+def set_loan_interest_paused(loan_id, paused):
+    db = database.get_db()
+    db.execute(
+        'UPDATE loans SET interest_paused = ? WHERE id = ?',
+        (1 if paused else 0, loan_id)
+    )
+    db.commit()
+
+
+def get_outstanding_credit_line_balance_for_user(user_id):
+    """Sum current_balance across the user's active credit-line loans.
+    Used to compute frozen collateral on savings interest accrual."""
+    db = database.get_db()
+    row = db.execute(
+        "SELECT COALESCE(SUM(current_balance), 0) AS total FROM loans "
+        "WHERE user_id = ? AND status = 'active' AND product_type = 'credit_line'",
+        (user_id,)
+    ).fetchone()
+    return float(row['total'])
+
+
+def record_loan_payment(loan_id, amount, source='wallet', journal_id=None,
+                        recorded_by=None, note=None):
+    """Apply a payment to a loan. Returns a dict with:
+      - applied: amount applied to the loan (<= input amount)
+      - remainder: amount left over (input minus applied) — caller should
+        route this to a savings goal or other product
+      - new_balance: loan balance after payment
+      - paid_in_full: bool, True if loan flipped to paid_in_full
+    """
+    db = database.get_db()
+    loan = db.execute('SELECT * FROM loans WHERE id = ?', (loan_id,)).fetchone()
+    if not loan or loan['status'] != 'active':
+        return {'applied': 0.0, 'remainder': amount, 'new_balance': 0.0,
+                'paid_in_full': False}
+
+    balance = float(loan['current_balance'])
+    applied = min(float(amount), balance)
+    remainder = float(amount) - applied
+    new_balance = balance - applied
+
+    db.execute(
+        'INSERT INTO loan_payments (loan_id, amount, source, journal_id, '
+        'recorded_by, note) VALUES (?, ?, ?, ?, ?, ?)',
+        (loan_id, applied, source, journal_id, recorded_by, note)
+    )
+
+    paid_in_full = new_balance <= 0.0001  # float tolerance
+    if paid_in_full:
+        db.execute(
+            "UPDATE loans SET current_balance = 0, status = 'paid_in_full', "
+            "closed_at = datetime('now') WHERE id = ?",
+            (loan_id,)
+        )
+    else:
+        db.execute(
+            'UPDATE loans SET current_balance = ? WHERE id = ?',
+            (new_balance, loan_id)
+        )
+    db.commit()
+
+    return {
+        'applied': applied,
+        'remainder': remainder,
+        'new_balance': 0.0 if paid_in_full else new_balance,
+        'paid_in_full': paid_in_full,
+    }
+
+
+def get_loan_payments(loan_id):
+    db = database.get_db()
+    return db.execute(
+        'SELECT p.*, u.character_name as recorded_by_name '
+        'FROM loan_payments p '
+        'LEFT JOIN users u ON p.recorded_by = u.id '
+        'WHERE p.loan_id = ? ORDER BY p.paid_at DESC',
+        (loan_id,)
+    ).fetchall()
+
+
+def get_loan_interest_logs(loan_id):
+    db = database.get_db()
+    return db.execute(
+        'SELECT * FROM loan_interest_log WHERE loan_id = ? ORDER BY accrued_at DESC',
+        (loan_id,)
+    ).fetchall()

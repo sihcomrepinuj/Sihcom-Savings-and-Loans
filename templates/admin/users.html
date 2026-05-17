@@ -23,6 +23,8 @@
                         <th>Character ID</th>
                         <th>Role</th>
                         <th>Joined</th>
+                        <th>Interest</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,6 +40,29 @@
                             {% endif %}
                         </td>
                         <td>{{ user['created_at'][:10] }}</td>
+                        <td>
+                            {% if user['interest_paused'] %}
+                            <span class="badge bg-secondary">Paused</span>
+                            {% else %}
+                            <span class="badge bg-success">Accruing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not user['is_admin'] %}
+                            <form method="POST" action="{{ url_for('admin_toggle_user_interest_pause', user_id=user['id']) }}" class="d-inline">
+                                {% if user['interest_paused'] %}
+                                <input type="hidden" name="paused" value="0">
+                                <button type="submit" class="btn btn-outline-success btn-sm">Resume</button>
+                                {% else %}
+                                <input type="hidden" name="paused" value="1">
+                                <button type="submit" class="btn btn-outline-info btn-sm"
+                                        onclick="return confirm('Pause interest accrual for {{ user['character_name'] }}? This pauses both savings and loan interest.');">
+                                    Pause
+                                </button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

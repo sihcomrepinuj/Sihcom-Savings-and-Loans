@@ -5,6 +5,7 @@ from preston import Preston
 from config import Config
 import models
 import database
+import interest
 
 
 def _get_bank_preston():
@@ -103,22 +104,73 @@ def sync_wallet():
         else:
             sender_name = _resolve_character_name(auth, sender_id)
 
-        # Try to match to an active order
+        # Look up the sender's open loan and active goal
+        open_loan = None
+        active_order = None
         if sender_user:
+            open_loan = models.get_open_loan_for_user(sender_user['id'])
             active_order = models.get_active_order_for_user(sender_user['id'])
-        else:
-            active_order = None
 
-        if active_order:
-            # Auto-match: create deposit and mark journal entry
+        # Only loans that are 'active' (disbursed) can receive payments —
+        # 'pending_disbursement' loans still owe nothing.
+        loan_for_payment = open_loan if (open_loan and open_loan['status'] == 'active') else None
+
+        remainder = amount
+        applied_to_loan = 0.0
+        applied_to_goal = 0.0
+
+        if loan_for_payment:
+            # Accrue any pending interest first so the borrower pays the
+            # up-to-date balance, not a stale one.
+            interest.accrue_interest_for_loan(loan_for_payment['id'])
+            loan_for_payment = models.get_loan(loan_for_payment['id'])
+            if loan_for_payment and loan_for_payment['status'] == 'active':
+                result = models.record_loan_payment(
+                    loan_id=loan_for_payment['id'],
+                    amount=remainder,
+                    source='wallet',
+                    journal_id=journal_id,
+                    recorded_by=admin['id'],
+                    note=f'Wallet sync: {reason}' if reason else 'Wallet sync',
+                )
+                applied_to_loan = result['applied']
+                remainder = result['remainder']
+                if applied_to_loan > 0:
+                    models.create_notification(
+                        user_id=loan_for_payment['user_id'],
+                        notification_type='loan_payment_recorded',
+                        message=f'{applied_to_loan:,.2f} ISK applied to your loan '
+                                f'via wallet sync. Remaining balance: '
+                                f'{result["new_balance"]:,.2f} ISK.',
+                    )
+                if result['paid_in_full']:
+                    models.create_notification(
+                        user_id=loan_for_payment['user_id'],
+                        notification_type='loan_paid_in_full',
+                        message='Your loan has been paid in full. Frozen savings collateral is released.',
+                    )
+
+        if remainder > 0 and active_order:
             models.record_deposit(
                 order_id=active_order['id'],
-                amount=amount,
+                amount=remainder,
                 recorded_by_user_id=admin['id'],
                 note=f'Wallet sync: {reason}' if reason else 'Wallet sync',
                 source='wallet',
                 journal_id=journal_id,
             )
+            models.create_notification(
+                user_id=active_order['user_id'],
+                notification_type='deposit_recorded',
+                message=f'{remainder:,.2f} ISK has been deposited to your '
+                        f'{active_order["ship_name"]} goal via wallet sync.',
+                order_id=active_order['id']
+            )
+            applied_to_goal = remainder
+            remainder = 0
+
+        if applied_to_loan > 0 or applied_to_goal > 0:
+            matched_order_id = active_order['id'] if applied_to_goal > 0 else None
             models.insert_journal_entry(
                 journal_id=journal_id,
                 sender_id=sender_id,
@@ -126,20 +178,12 @@ def sync_wallet():
                 amount=amount,
                 reason=reason,
                 journal_date=journal_date,
-                order_id=active_order['id'],
+                order_id=matched_order_id,
                 status='matched',
-            )
-            models.create_notification(
-                user_id=active_order['user_id'],
-                notification_type='deposit_recorded',
-                message=f'{amount:,.2f} ISK has been deposited to your '
-                        f'{active_order["ship_name"]} goal via wallet sync.',
-                order_id=active_order['id']
             )
             matched_count += 1
             matched_isk += amount
         else:
-            # Unmatched: store for admin review
             models.insert_journal_entry(
                 journal_id=journal_id,
                 sender_id=sender_id,

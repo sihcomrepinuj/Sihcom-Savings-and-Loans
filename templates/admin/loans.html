@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Admin Loans - Sihcom S&amp;L{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+        <li class="breadcrumb-item active">Loans</li>
+    </ol>
+</nav>
+
+<h2 class="text-white mb-4">Loans</h2>
+
+<!-- Pending disbursement -->
+<div class="card bg-secondary bg-opacity-25 border-warning mb-4">
+    <div class="card-header border-warning">
+        <h5 class="mb-0 text-warning">Pending Credit Line Disbursements ({{ pending_loans|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_loans %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Amount Requested</th>
+                        <th>Requested At</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in pending_loans %}
+                    <tr>
+                        <td>{{ l['character_name'] }}</td>
+                        <td>{{ l['principal'] | isk }}</td>
+                        <td>{{ l['created_at'][:16] }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View / Disburse</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">No pending disbursements.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Active loans -->
+<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Active Loans ({{ active_loans|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if active_loans %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Type</th>
+                        <th>Principal</th>
+                        <th>Outstanding</th>
+                        <th>Disbursed</th>
+                        <th>Interest</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in active_loans %}
+                    <tr>
+                        <td>{{ l['character_name'] }}</td>
+                        <td>
+                            {% if l['product_type'] == 'credit_line' %}
+                            <span class="badge bg-info">Credit Line</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">General</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ l['principal'] | isk }}</td>
+                        <td class="text-warning">{{ l['current_balance'] | isk }}</td>
+                        <td>{{ l['disbursed_at'][:10] if l['disbursed_at'] else '' }}</td>
+                        <td>
+                            {% if l['interest_paused'] %}
+                            <span class="badge bg-secondary">Paused</span>
+                            {% else %}
+                            <span class="badge bg-success">Accruing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">No active loans.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create general loan -->
+<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Create General Loan</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-secondary small">
+            Originates a general loan at {{ "%.2f" | format(loan_settings['general_loan_rate'] * 100) }}% per {{ settings['interest_period'] }},
+            compounding. Loan becomes active immediately &mdash; send ISK in-game to the member.
+            The member must not have an open loan.
+        </p>
+        <form method="POST" action="{{ url_for('admin_create_general_loan') }}" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Member</label>
+                <select name="user_id" class="form-select bg-dark text-light border-secondary" required>
+                    <option value="">Select a member...</option>
+                    {% for u in users %}
+                    <option value="{{ u['id'] }}">{{ u['character_name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Loan Amount (ISK)</label>
+                <input type="number" name="amount" min="1" step="any" required
+                       class="form-control bg-dark text-light border-secondary">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-warning w-100">Create Loan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- All loans (history) -->
+<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">All Loans ({{ all_loans|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if all_loans %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Type</th>
+                        <th>Principal</th>
+                        <th>Current</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in all_loans %}
+                    <tr>
+                        <td>{{ l['character_name'] }}</td>
+                        <td>
+                            {% if l['product_type'] == 'credit_line' %}
+                            <span class="badge bg-info">Credit Line</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">General</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ l['principal'] | isk }}</td>
+                        <td>{{ l['current_balance'] | isk }}</td>
+                        <td>
+                            <span class="badge
+                                {% if l['status'] == 'pending_disbursement' %}bg-warning text-dark
+                                {% elif l['status'] == 'active' %}bg-danger
+                                {% elif l['status'] == 'paid_in_full' %}bg-primary
+                                {% else %}bg-secondary{% endif %}">
+                                {{ l['status'] | replace('_', ' ') | title }}
+                            </span>
+                        </td>
+                        <td>{{ l['created_at'][:10] }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">No loans on record.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

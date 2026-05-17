@@ -89,6 +89,43 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (order_id) REFERENCES ship_orders(id)
 );
 
+CREATE TABLE IF NOT EXISTS loans (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL,
+    product_type    TEXT NOT NULL,
+    principal       REAL NOT NULL,
+    current_balance REAL NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'pending_disbursement',
+    interest_paused INTEGER NOT NULL DEFAULT 0,
+    created_at      TEXT DEFAULT (datetime('now')),
+    disbursed_at    TEXT,
+    closed_at       TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS loan_payments (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    loan_id     INTEGER NOT NULL,
+    amount      REAL NOT NULL,
+    source      TEXT NOT NULL DEFAULT 'wallet',
+    journal_id  INTEGER,
+    recorded_by INTEGER,
+    note        TEXT,
+    paid_at     TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (loan_id) REFERENCES loans(id),
+    FOREIGN KEY (recorded_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS loan_interest_log (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    loan_id         INTEGER NOT NULL,
+    amount          REAL NOT NULL,
+    balance_before  REAL NOT NULL,
+    balance_after   REAL NOT NULL,
+    accrued_at      TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (loan_id) REFERENCES loans(id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
 
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON ship_orders(user_id);
@@ -98,6 +135,9 @@ CREATE INDEX IF NOT EXISTS idx_interest_log_order_id ON interest_log(order_id);
 CREATE INDEX IF NOT EXISTS idx_wallet_journal_status ON wallet_journal(status);
 CREATE INDEX IF NOT EXISTS idx_wallet_journal_sender ON wallet_journal(sender_id);
 CREATE INDEX IF NOT EXISTS idx_catalog_available ON ship_catalog(is_available);
+CREATE INDEX IF NOT EXISTS idx_loans_user_status ON loans(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_loan_payments_loan_id ON loan_payments(loan_id);
+CREATE INDEX IF NOT EXISTS idx_loan_interest_log_loan_id ON loan_interest_log(loan_id);
 """
 
 # Migration SQL for existing databases that don't have the new columns/tables
@@ -110,6 +150,7 @@ DEFAULT_SETTINGS = {
     'interest_rate': '0.05',
     'interest_period': 'monthly',
     'usd_to_isk_ratio': '1000000000',
+    'general_loan_rate': '0.125',
 }
 
 
@@ -157,6 +198,9 @@ def init_db():
 
     # Add category to ship_orders for military-style completion badges
     _try_alter(db, "ALTER TABLE ship_orders ADD COLUMN category TEXT")
+
+    # Per-user interest pause (covers both savings and loan accrual)
+    _try_alter(db, "ALTER TABLE users ADD COLUMN interest_paused INTEGER NOT NULL DEFAULT 0")
 
     # Backfill category on existing orders from ship_catalog
     db.execute('''

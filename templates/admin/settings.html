@@ -79,6 +79,33 @@
 
         <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
             <div class="card-header">
+                <h4 class="mb-0">Loan Settings</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="general_loan_rate" class="form-label">General Loan Rate</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                                   id="general_loan_rate" name="general_loan_rate"
+                                   step="0.001" min="0" max="1"
+                                   value="{{ loan_settings['general_loan_rate'] }}" required>
+                            <span class="input-group-text bg-dark text-light border-secondary">
+                                ({{ "%.2f" | format(loan_settings['general_loan_rate'] * 100) }}%)
+                            </span>
+                        </div>
+                        <div class="form-text text-secondary">
+                            Per-period rate for admin-originated general loans, compounding on the same period as savings.
+                            Credit lines accrue at the savings rate above.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Save Loan Settings</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+            <div class="card-header">
                 <h4 class="mb-0">Affiliate Settings</h4>
             </div>
             <div class="card-body">

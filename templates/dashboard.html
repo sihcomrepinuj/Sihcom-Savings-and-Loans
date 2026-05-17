@@ -2,6 +2,101 @@
 {% block title %}Dashboard - Sihcom S&amp;L{% endblock %}
 
 {% block content %}
+<!-- Loans section -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-white mb-0">My Loan</h2>
+    {% if can_request_credit_line %}
+    <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#requestDrawModal">
+        Request Credit Line Draw
+    </button>
+    {% endif %}
+</div>
+
+{% if open_loan %}
+<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="card-title text-white mb-1">
+                    {% if open_loan['product_type'] == 'credit_line' %}Credit Line{% else %}General Loan{% endif %}
+                </h5>
+                <span class="badge
+                    {% if open_loan['status'] == 'pending_disbursement' %}bg-warning text-dark
+                    {% elif open_loan['status'] == 'active' %}bg-danger
+                    {% else %}bg-secondary{% endif %} mb-2">
+                    {{ open_loan['status'] | replace('_', ' ') | title }}
+                </span>
+            </div>
+            <a href="{{ url_for('loan_detail', loan_id=open_loan['id']) }}" class="btn btn-outline-light btn-sm">View Loan</a>
+        </div>
+        {% if open_loan['status'] == 'active' and loan_pending %}
+        <div class="row mt-2">
+            <div class="col-md-4">
+                <small class="text-light">Original Principal</small><br>
+                <strong class="text-white">{{ open_loan['principal'] | isk }}</strong>
+            </div>
+            <div class="col-md-4">
+                <small class="text-light">Outstanding Balance</small><br>
+                <strong class="text-warning">{{ loan_pending['projected_balance'] | isk }}</strong>
+                {% if loan_pending['pending_interest'] > 0 %}
+                <small class="text-warning">(incl. ~{{ loan_pending['pending_interest'] | isk }} pending)</small>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <small class="text-light">Repayment</small><br>
+                <span class="text-light">Send ISK to <strong class="text-white">Bernie May Doff</strong>; auto-applied to loan first.</span>
+            </div>
+        </div>
+        {% elif open_loan['status'] == 'pending_disbursement' %}
+        <p class="text-warning mb-0 mt-2">Your draw request is awaiting admin disbursement.</p>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card bg-secondary bg-opacity-10 border-secondary mb-4">
+    <div class="card-body text-secondary">
+        {% if total_savings > 0 %}
+        No outstanding loan. You can draw a credit line up to <strong class="text-white">{{ total_savings | isk }}</strong> against your savings.
+        {% else %}
+        No outstanding loan. Build up a savings balance to become eligible for a credit line.
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Credit line draw request modal -->
+{% if can_request_credit_line %}
+<div class="modal fade" id="requestDrawModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('request_credit_line_draw') }}">
+            <div class="modal-content bg-dark text-light border border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Request Credit Line Draw</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary">
+                        Borrow up to <strong class="text-white">{{ total_savings | isk }}</strong> against your savings.
+                        The drawn amount freezes the matching portion of your savings until repaid.
+                        Interest accrues at the savings rate.
+                    </p>
+                    <div class="mb-3">
+                        <label for="drawAmount" class="form-label">Draw amount (ISK)</label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                               id="drawAmount" name="amount" min="1" max="{{ total_savings | int }}"
+                               step="any" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Request Draw</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="text-white">My Savings Goals</h2>
     <a href="{{ url_for('catalog') }}" class="btn btn-outline-success btn-sm">Browse Ships</a>
