@@ -90,10 +90,20 @@
                 {% endif %}
 
                 {% if order['status'] == 'active' and not session.get('is_admin') %}
+                {% if outstanding_credit_line and outstanding_credit_line > 0 %}
+                <div class="alert alert-warning mt-2 mb-2 py-2 small">
+                    Withdrawal is locked while you have an open credit line
+                    ({{ outstanding_credit_line | isk }} outstanding) collateralized by this savings.
+                    Pay off the credit line to unlock withdrawal.
+                </div>
+                {% endif %}
                 <div class="d-flex gap-2 mt-2">
                     <form method="POST" action="{{ url_for('request_withdrawal', order_id=order['id']) }}"
                           onsubmit="return confirm('Are you sure you want to request a full withdrawal? This will cancel your savings goal once approved.');">
-                        <button type="submit" class="btn btn-outline-warning btn-sm">Request Withdrawal</button>
+                        <button type="submit" class="btn btn-outline-warning btn-sm"
+                                {% if outstanding_credit_line and outstanding_credit_line > 0 %}disabled{% endif %}>
+                            Request Withdrawal
+                        </button>
                     </form>
                     <form method="POST" action="{{ url_for('toggle_order_public', order_id=order['id']) }}"
                           class="d-flex align-items-center">

@@ -228,8 +228,16 @@
             <div class="card-body">
                 <p>{{ owner['character_name'] }} has requested a full withdrawal.</p>
                 <p>Amount to send: <strong>{{ balance['savings_balance'] | isk }}</strong></p>
+                {% if outstanding_credit_line and outstanding_credit_line > 0 %}
+                <div class="alert alert-danger py-2 small mb-2">
+                    Cannot approve: {{ owner['character_name'] }} has
+                    <strong>{{ outstanding_credit_line | isk }}</strong> outstanding on a credit
+                    line collateralized by this savings. Settle the credit line first.
+                </div>
+                {% endif %}
                 <form method="POST" action="{{ url_for('admin_approve_withdrawal', order_id=order['id']) }}" class="mb-2">
                     <button type="submit" class="btn btn-success w-100"
+                            {% if outstanding_credit_line and outstanding_credit_line > 0 %}disabled{% endif %}
                             onclick="return confirm('Approve withdrawal and send ISK in-game?');">
                         Approve Withdrawal
                     </button>
@@ -283,16 +291,28 @@
 
         <!-- Cancel / Danger Zone -->
         {% if order['status'] in ('active', 'withdrawal_pending', 'pending_approval') %}
+        {% set credit_line_blocks_release = order['status'] in ('active', 'withdrawal_pending') and outstanding_credit_line and outstanding_credit_line > 0 %}
         <div class="card bg-danger bg-opacity-10 border-danger">
             <div class="card-header">
                 <h5 class="mb-0 text-danger">Danger Zone</h5>
             </div>
             <div class="card-body">
+                {% if credit_line_blocks_release %}
+                <div class="alert alert-danger py-2 small mb-3">
+                    {{ owner['character_name'] }} has
+                    <strong>{{ outstanding_credit_line | isk }}</strong> outstanding on a credit
+                    line collateralized by this savings. Completing or cancelling the goal is
+                    blocked until the credit line is settled.
+                </div>
+                {% endif %}
                 {% if order['status'] in ('active', 'withdrawal_pending') %}
                 <form method="POST" action="{{ url_for('admin_complete_paid_directly', order_id=order['id']) }}"
                       class="mb-2"
                       onsubmit="return confirm('Mark this goal complete? Use this when you have paid out the balance directly to {{ owner['character_name'] }} outside the wallet.');">
-                    <button type="submit" class="btn btn-outline-warning w-100">Complete (Paid Directly)</button>
+                    <button type="submit" class="btn btn-outline-warning w-100"
+                            {% if credit_line_blocks_release %}disabled{% endif %}>
+                        Complete (Paid Directly)
+                    </button>
                 </form>
                 <small class="text-light d-block mb-3">
                     Use when the member has been paid out directly (in-game ship, contract, etc.).
@@ -301,7 +321,10 @@
                 {% endif %}
                 <form method="POST" action="{{ url_for('admin_cancel_order', order_id=order['id']) }}"
                       onsubmit="return confirm('Cancel this savings goal? This cannot be undone.');">
-                    <button type="submit" class="btn btn-outline-danger w-100">Cancel Goal</button>
+                    <button type="submit" class="btn btn-outline-danger w-100"
+                            {% if credit_line_blocks_release %}disabled{% endif %}>
+                        Cancel Goal
+                    </button>
                 </form>
             </div>
         </div>

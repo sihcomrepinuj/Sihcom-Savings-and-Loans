@@ -76,9 +76,12 @@ Plus `users.interest_paused` (boolean; pauses both savings and loan accrual for 
 
 ## Known gaps (next-agent worth-fixing)
 
-- **Withdrawal vs open credit line.** Members can request and admin can approve a savings withdrawal while a credit line is open against that savings. Either block at `request_withdrawal` (member side) when `get_outstanding_credit_line_balance_for_user > 0`, or warn at admin-approve. Same applies to goal cancel and goal completion: a closing goal doesn't update or close its linked credit line.
 - **No collateral release accounting.** The "frozen" portion of savings is computed dynamically each accrual run via `_apply_frozen_collateral`; there's no per-deposit flag. That's fine for the math but means there's no audit trail of *which* ISK is "frozen".
 - **No manual loan payment beyond admin UI.** Members can't self-record a manual loan payment. That's deliberate — wallet sync is the canonical path — but worth confirming if user feedback diverges.
+
+## Resolved gaps
+
+- **2026-05-17 — Withdrawal/cancel/complete blocked when credit line open.** `request_withdrawal`, `admin_approve_withdrawal`, `admin_cancel_order`, and `admin_complete_paid_directly` all guard on `get_outstanding_credit_line_balance_for_user`. `record_deposit` also skips auto-completion when a credit line is outstanding (sends a `goal_funded_pending_loan` notification instead). Member and admin order-detail templates surface the conflict and disable the relevant buttons.
 
 ## Local dev
 

@@ -387,6 +387,7 @@ def order_detail(order_id):
     deposits = models.get_deposits_for_order(order_id)
     interest_logs = models.get_interest_logs_for_order(order_id)
     user = models.get_user_by_id(order['user_id'])
+    outstanding_credit_line = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
 
     return render_template(
         'order_detail.html',
@@ -395,6 +396,7 @@ def order_detail(order_id):
         deposits=deposits,
         interest_logs=interest_logs,
         owner=user,
+        outstanding_credit_line=outstanding_credit_line,
     )
 
 
@@ -408,6 +410,15 @@ def request_withdrawal(order_id):
         abort(403)
     if order['status'] != 'active':
         flash('Only active savings goals can be withdrawn.', 'warning')
+        return redirect(url_for('order_detail', order_id=order_id))
+
+    outstanding = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
+    if outstanding > 0:
+        flash(
+            f'You have {outstanding:,.2f} ISK outstanding on a credit line collateralized '
+            f'by your savings. Pay off the credit line before requesting a withdrawal.',
+            'warning'
+        )
         return redirect(url_for('order_detail', order_id=order_id))
 
     models.update_order_status(order_id, 'withdrawal_pending')
@@ -717,6 +728,7 @@ def admin_order_detail(order_id):
     interest_logs = models.get_interest_logs_for_order(order_id)
     user = models.get_user_by_id(order['user_id'])
     categories = models.get_catalog_categories()
+    outstanding_credit_line = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
 
     return render_template(
         'admin/order_detail.html',
@@ -726,6 +738,7 @@ def admin_order_detail(order_id):
         interest_logs=interest_logs,
         owner=user,
         categories=categories,
+        outstanding_credit_line=outstanding_credit_line,
     )
 
 
@@ -843,6 +856,16 @@ def admin_cancel_order(order_id):
         flash('This order cannot be cancelled.', 'warning')
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
+    if order['status'] in ('active', 'withdrawal_pending'):
+        outstanding = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
+        if outstanding > 0:
+            flash(
+                f'Cannot cancel: borrower has {outstanding:,.2f} ISK outstanding on a credit line '
+                f'collateralized by this savings. Settle the credit line first.',
+                'danger'
+            )
+            return redirect(url_for('admin_order_detail', order_id=order_id))
+
     models.update_order_status(order_id, 'cancelled')
     flash('Savings goal has been cancelled.', 'info')
     return redirect(url_for('admin_order_detail', order_id=order_id))
@@ -856,6 +879,15 @@ def admin_approve_withdrawal(order_id):
         abort(404)
     if order['status'] != 'withdrawal_pending':
         flash('This order does not have a pending withdrawal request.', 'warning')
+        return redirect(url_for('admin_order_detail', order_id=order_id))
+
+    outstanding = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
+    if outstanding > 0:
+        flash(
+            f'Cannot approve withdrawal: borrower has {outstanding:,.2f} ISK outstanding on a '
+            f'credit line collateralized by this savings. Settle the credit line first.',
+            'danger'
+        )
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
     models.update_order_status(order_id, 'withdrawn')
@@ -908,6 +940,15 @@ def admin_complete_paid_directly(order_id):
         abort(404)
     if order['status'] not in ('active', 'withdrawal_pending'):
         flash('Only active or withdrawal-pending goals can be marked completed.', 'warning')
+        return redirect(url_for('admin_order_detail', order_id=order_id))
+
+    outstanding = models.get_outstanding_credit_line_balance_for_user(order['user_id'])
+    if outstanding > 0:
+        flash(
+            f'Cannot mark complete: borrower has {outstanding:,.2f} ISK outstanding on a credit '
+            f'line collateralized by this savings. Settle the credit line first.',
+            'danger'
+        )
         return redirect(url_for('admin_order_detail', order_id=order_id))
 
     models.update_order_status(order_id, 'completed')

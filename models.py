@@ -292,17 +292,27 @@ def record_deposit(order_id, amount, recorded_by_user_id, note=None,
     )
     db.commit()
 
-    # Check if goal is now completed
+    # Check if goal is now completed. Skip auto-completion if the user has an open
+    # credit line collateralized by this savings — admin must settle the loan first.
     order = get_order(order_id)
     savings_balance = order['amount_deposited'] + order['interest_earned']
     if savings_balance >= order['goal_price']:
-        update_order_status(order_id, 'completed')
-        create_notification(
-            user_id=order['user_id'],
-            notification_type='goal_completed',
-            message=f'Congratulations! Your savings goal for {order["ship_name"]} is complete!',
-            order_id=order_id
-        )
+        if get_outstanding_credit_line_balance_for_user(order['user_id']) > 0:
+            create_notification(
+                user_id=order['user_id'],
+                notification_type='goal_funded_pending_loan',
+                message=f'Your savings goal for {order["ship_name"]} is fully funded, but an open '
+                        f'credit line is still outstanding. Pay it off to release your savings.',
+                order_id=order_id
+            )
+        else:
+            update_order_status(order_id, 'completed')
+            create_notification(
+                user_id=order['user_id'],
+                notification_type='goal_completed',
+                message=f'Congratulations! Your savings goal for {order["ship_name"]} is complete!',
+                order_id=order_id
+            )
 
 
 def get_deposits_for_order(order_id):
