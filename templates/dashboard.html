@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from '_macros.html' import bernie_link with context %}
 {% block title %}Dashboard - Sihcom S&amp;L{% endblock %}
 
 {% block content %}
@@ -44,7 +45,7 @@
             </div>
             <div class="col-md-4">
                 <small class="text-light">Repayment</small><br>
-                <span class="text-light">Send ISK to <strong class="text-white">Bernie May Doff</strong>; auto-applied to loan first.</span>
+                <span class="text-light">Send ISK to {{ bernie_link() }}; auto-applied to loan first.</span>
             </div>
         </div>
         {% elif open_loan['status'] == 'pending_disbursement' %}
@@ -164,7 +165,7 @@
                 </div>
                 {% elif order['status'] == 'active' and order['amount_deposited'] == 0 %}
                 <div class="mb-3">
-                    <p class="text-info mb-0">Goal approved! Send ISK to <strong class="text-white">Bernie May Doff</strong> in-game to start saving.</p>
+                    <p class="text-info mb-0">Goal approved! Send ISK to {{ bernie_link() }} in-game to start saving.</p>
                 </div>
                 {% endif %}
 
@@ -201,7 +202,7 @@
         </a>
         <div class="collapse mt-3" id="depositHelp">
             <ol class="text-light mb-0">
-                <li>Open EVE Online and send ISK <em>from the character whose goal you want to contribute to</em> to <strong class="text-white">Bernie May Doff</strong></li>
+                <li>Open EVE Online and send ISK <em>from the character whose goal you want to contribute to</em> to {{ bernie_link() }}</li>
                 <li>You can leave the <em>Reason</em> field blank</li>
                 <li>The admin will sync the wallet and your deposit will appear here automatically</li>
                 <li>If it doesn't appear within a day, contact the admin &mdash; they can also record deposits manually</li>

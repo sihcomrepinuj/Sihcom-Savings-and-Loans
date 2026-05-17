@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from '_macros.html' import bernie_link with context %}
 {% block title %}Loan #{{ loan['id'] }} - Sihcom S&amp;L{% endblock %}
 
 {% block content %}
@@ -189,7 +190,7 @@
             </div>
             <div class="card-body">
                 <ol class="text-light small mb-0 ps-3">
-                    <li class="mb-1">Send ISK to <strong class="text-white">Bernie May Doff</strong> in EVE</li>
+                    <li class="mb-1">Send ISK to {{ bernie_link() }} in EVE</li>
                     <li class="mb-1">Wallet sync auto-applies your ISK to this loan first</li>
                     <li class="mb-1">Any remainder flows to your active savings goal (if any)</li>
                     <li>When the balance hits zero, the loan closes and any frozen collateral is released</li>

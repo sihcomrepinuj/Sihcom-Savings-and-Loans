@@ -82,5 +82,27 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-copy-value]');
+        if (!btn) return;
+        var value = btn.getAttribute('data-copy-value');
+        if (!navigator.clipboard) {
+            btn.title = 'Clipboard unavailable';
+            return;
+        }
+        navigator.clipboard.writeText(value).then(function() {
+            var original = btn.innerHTML;
+            btn.innerHTML = 'Copied!';
+            btn.classList.add('text-success');
+            setTimeout(function() {
+                btn.innerHTML = original;
+                btn.classList.remove('text-success');
+            }, 1200);
+        }).catch(function() {
+            btn.title = 'Copy failed';
+        });
+    });
+    </script>
 </body>
 </html>

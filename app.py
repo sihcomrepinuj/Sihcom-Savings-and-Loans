@@ -201,6 +201,14 @@ def badge_url_filter(category):
 # --- Context processors ---
 
 @app.context_processor
+def inject_admin_link():
+    return {
+        'admin_character_name': 'Bernie May Doff',
+        'admin_evewho_url': f'https://evewho.com/character/{Config.ADMIN_CHARACTER_ID}',
+    }
+
+
+@app.context_processor
 def inject_notification_count():
     if 'user_id' in session:
         return {'unread_notification_count': models.get_unread_count(session['user_id'])}

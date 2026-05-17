@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from '_macros.html' import bernie_link with context %}
 {% block title %}{{ order['ship_name'] }} - Sihcom S&amp;L{% endblock %}
 
 {% block content %}
@@ -268,7 +269,7 @@
             </div>
             <div class="card-body">
                 <ol class="text-light small mb-0 ps-3">
-                    <li class="mb-1">Send ISK <em>from the character whose goal you want to contribute to</em> to <strong class="text-white">Bernie May Doff</strong> in EVE</li>
+                    <li class="mb-1">Send ISK <em>from the character whose goal you want to contribute to</em> to {{ bernie_link() }} in EVE</li>
                     <li class="mb-1">You can leave the <em>Reason</em> field blank</li>
                     <li class="mb-1">The admin will sync the wallet and your deposit appears here</li>
                     <li>If it doesn't show up within a day, contact the admin</li>

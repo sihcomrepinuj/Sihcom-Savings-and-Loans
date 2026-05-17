@@ -1,0 +1,11 @@
+{% macro bernie_link() -%}
+<span class="bernie-link-group">
+    <a href="{{ admin_evewho_url }}" target="_blank" rel="noopener"
+       class="text-white fw-bold text-decoration-none bernie-link"
+       title="Open character info on evewho.com">{{ admin_character_name }}<sup class="ms-1 small text-info">&#x2197;</sup></a>
+    <button type="button"
+            class="btn btn-link btn-sm p-0 ms-1 text-secondary bernie-copy-btn"
+            data-copy-value="{{ admin_character_name }}"
+            title="Copy name to clipboard">&#x1F4CB;</button>
+</span>
+{%- endmacro %}
