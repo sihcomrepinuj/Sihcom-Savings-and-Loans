@@ -594,6 +594,21 @@ def mark_loan_disbursed(loan_id):
     db.commit()
 
 
+def cancel_pending_loan(loan_id):
+    """Cancel a pending_disbursement loan. Returns rowcount.
+
+    Guarded with status check so a race with mark_loan_disbursed cannot
+    cancel an already-active loan."""
+    db = database.get_db()
+    cur = db.execute(
+        "UPDATE loans SET status = 'cancelled', closed_at = datetime('now') "
+        "WHERE id = ? AND status = 'pending_disbursement'",
+        (loan_id,)
+    )
+    db.commit()
+    return cur.rowcount
+
+
 def set_loan_interest_paused(loan_id, paused):
     db = database.get_db()
     db.execute(

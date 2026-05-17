@@ -1172,6 +1172,31 @@ def admin_disburse_loan(loan_id):
     return redirect(url_for('admin_loan_detail', loan_id=loan_id))
 
 
+@app.route('/admin/loan/<int:loan_id>/cancel', methods=['POST'])
+@admin_required
+def admin_cancel_pending_loan(loan_id):
+    loan = models.get_loan(loan_id)
+    if not loan:
+        abort(404)
+    if loan['status'] != 'pending_disbursement':
+        flash('Only pending draw requests can be cancelled.', 'warning')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    rowcount = models.cancel_pending_loan(loan_id)
+    if rowcount == 0:
+        flash('Loan status changed before cancel could be applied.', 'warning')
+        return redirect(url_for('admin_loan_detail', loan_id=loan_id))
+
+    models.create_notification(
+        user_id=loan['user_id'],
+        notification_type='loan_request_rejected',
+        message=f'Your credit line draw request of {loan["principal"]:,.2f} ISK '
+                f'was rejected. Submit a new request if needed.',
+    )
+    flash(f'Draw request #{loan_id} cancelled.', 'success')
+    return redirect(url_for('admin_loans'))
+
+
 @app.route('/admin/loan/<int:loan_id>/toggle-interest-pause', methods=['POST'])
 @admin_required
 def admin_toggle_loan_interest_pause(loan_id):

@@ -86,6 +86,7 @@ Plus `users.interest_paused` (boolean; pauses both savings and loan accrual for 
 
 - **2026-05-17 — Withdrawal/cancel/complete blocked when credit line open.** `request_withdrawal`, `admin_approve_withdrawal`, `admin_cancel_order`, and `admin_complete_paid_directly` all guard on `get_outstanding_credit_line_balance_for_user`. `record_deposit` also skips auto-completion when a credit line is outstanding (sends a `goal_funded_pending_loan` notification instead). Member and admin order-detail templates surface the conflict and disable the relevant buttons.
 - **2026-05-17 — Missing badges on the leaderboard.** Orders created before the 2026-02-23 `type_id` wiring had NULL `type_id`, which the badge query filters out. `init_db` now backfills `type_id` from `ship_catalog` by exact `ship_name` match (same pattern as the existing category backfill). For orders with no catalog match, the admin order-detail page surfaces a "Refresh ship data" button that calls Fuzzwork via `admin_order_refresh_ship_data`.
+- **2026-05-17 — Admin can cancel a pending credit-line draw.** `admin_cancel_pending_loan` route + `cancel_pending_loan` model function add `cancelled` as a new `loans.status` value (no schema migration — TEXT column with no CHECK constraint). Sets `closed_at` and leaves `disbursed_at` NULL. Borrower gets a `loan_request_rejected` notification and is immediately unblocked to re-request (since `get_open_loan_for_user` only matches `pending_disbursement` + `active`). UI: "Reject Draw" button on the admin loan detail page, alongside "Mark Disbursed". Uses a status-guarded UPDATE to avoid racing with `mark_loan_disbursed`.
 
 ## Local dev
 
@@ -100,3 +101,6 @@ The user has explicitly deferred these to future sessions:
 - Bank-website-style UI redesign (Fifth Third Bank-ish aesthetic)
 - Bonds product
 - Leaderboard enhancements (the leaderboard is the most-loved feature, so polish has high payoff)
+- Terms of Service page outlining program rules. Rules captured so far:
+  - Savings boosts only apply to member accounts with in-game activity in the previous month (needs an ESI-derived last-active signal — not currently tracked).
+  - The bank reserves the right to close an account early by paying out the balance plus accrued interest (needs an admin forced-close action distinct from `admin_complete_paid_directly`).

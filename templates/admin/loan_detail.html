@@ -90,6 +90,11 @@
                     <button type="submit" class="btn btn-warning">Mark Disbursed</button>
                     <small class="text-light ms-2">Confirm after sending ISK to the borrower in EVE.</small>
                 </form>
+                <form method="POST" action="{{ url_for('admin_cancel_pending_loan', loan_id=loan['id']) }}" class="mb-3"
+                      onsubmit="return confirm('Reject {{ '{:,.2f}'.format(loan['principal']) }} ISK draw from {{ owner['character_name'] }}? The member will be notified and can re-request.');">
+                    <button type="submit" class="btn btn-outline-danger">Reject Draw</button>
+                    <small class="text-light ms-2">Use when the requested amount is wrong or the draw should not proceed.</small>
+                </form>
                 {% endif %}
 
                 {% if loan['status'] == 'active' %}
