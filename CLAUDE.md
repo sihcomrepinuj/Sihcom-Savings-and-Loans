@@ -1,6 +1,6 @@
 # Sihcom Savings and Loans — Codebase Notes for Future Agents
 
-A Flask app for an EVE Online corporation. Members save toward ship goals; the corp pays interest. As of 2026-05-16, also offers loans (admin-originated general loans + member-requested credit lines collateralized by savings).
+A Flask app for an EVE Online corporation. Members save toward ship goals; the corp pays interest. As of 2026-05-17, also offers loans (admin-originated general loans + member-requested credit lines collateralized by savings).
 
 ## Stack
 
@@ -15,7 +15,7 @@ A Flask app for an EVE Online corporation. Members save toward ship goals; the c
 - `app.py` — all Flask routes (member + admin), template filters, scheduler setup
 - `models.py` — all data access functions; no ORM, just direct SQL via `database.get_db()`
 - `database.py` — `SCHEMA_SQL` (full schema), `_try_alter()` helper for migrations, `DEFAULT_SETTINGS`, `init_db()`
-- `interest.py` — savings accrual + loan accrual + frozen-collateral math
+- `interest.py` — savings accrual + loan accrual + frozen-collateral math; also `estimate_time_to_goal(order, balance_info)` for the order-detail timer
 - `wallet.py` — ESI wallet sync; auto-matches deposits to active loans (loan-first) then to goals
 - `esi.py` — EVE image and type-id helpers
 - `config.py` — env-driven config (`Config` class)
@@ -41,6 +41,7 @@ To add a column or table:
 - **Deposit proration** for savings: deposits less than 30 days old earn at `age_days / 30` of the rate (see `_get_effective_balance`). Loans do not prorate.
 - **Wallet sync is the source of truth** for member-initiated deposits and loan payments. Auto-matches on sender's EVE character id. Outgoing ISK from the corp (e.g. loan disbursements) is NOT reconciled by the app — admin sends in-game and marks disbursed in the UI.
 - **Admin is a single character** (`Config.ADMIN_CHARACTER_ID`). Auth is session-based; the admin's `refresh_token` is used for ESI wallet calls.
+- **Admin display name** comes from the `inject_admin_link` context processor in `app.py` (`admin_character_name`, `admin_evewho_url`). When you want to render "Bernie May Doff" in a template, use `{% from '_macros.html' import bernie_link with context %}` and `{{ bernie_link() }}` — never hardcode the name. The `with context` is required because Jinja macros don't inherit context-processor values otherwise.
 
 ## Background jobs
 
@@ -73,6 +74,8 @@ Plus `users.interest_paused` (boolean; pauses both savings and loan accrual for 
 - `docs/plans/2026-02-23-affiliate-distribution-impl.md` — Savings Boost (USD-to-ISK affiliate distribution)
 - `docs/plans/2026-03-26-prorated-interest-design.md`, `2026-03-26-prorated-interest-impl.md` — the per-deposit age weighting for savings
 - `docs/plans/2026-05-16-loans-design.md` — loans, credit lines, per-user pause, complete-paid-directly. Includes implementation-status notes and known gaps at the bottom.
+- `docs/plans/2026-05-17-time-to-ship-design.md`, `2026-05-17-time-to-ship-impl.md` — time-to-ship estimator on order detail (member + admin views)
+- `docs/plans/2026-05-17-bernie-info-link-design.md`, `2026-05-17-bernie-info-link-impl.md` — Bernie May Doff link to evewho + copy-name button
 
 ## Known gaps (next-agent worth-fixing)
 
@@ -82,6 +85,7 @@ Plus `users.interest_paused` (boolean; pauses both savings and loan accrual for 
 ## Resolved gaps
 
 - **2026-05-17 — Withdrawal/cancel/complete blocked when credit line open.** `request_withdrawal`, `admin_approve_withdrawal`, `admin_cancel_order`, and `admin_complete_paid_directly` all guard on `get_outstanding_credit_line_balance_for_user`. `record_deposit` also skips auto-completion when a credit line is outstanding (sends a `goal_funded_pending_loan` notification instead). Member and admin order-detail templates surface the conflict and disable the relevant buttons.
+- **2026-05-17 — Missing badges on the leaderboard.** Orders created before the 2026-02-23 `type_id` wiring had NULL `type_id`, which the badge query filters out. `init_db` now backfills `type_id` from `ship_catalog` by exact `ship_name` match (same pattern as the existing category backfill). For orders with no catalog match, the admin order-detail page surfaces a "Refresh ship data" button that calls Fuzzwork via `admin_order_refresh_ship_data`.
 
 ## Local dev
 
