@@ -15,7 +15,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 ## Key Business Rules
 - Interest goes IN FAVOR of the member (savings account, not a loan)
 - Compound interest, configurable global rate and period (weekly/biweekly/monthly)
-- **30-day deposit lag**: New deposits do NOT earn interest until 30 days after deposit date. Interest accrues on "eligible balance" (deposits older than 30 days + all accrued interest). All deposits still count toward goal progress immediately.
+- **Deposits earn interest immediately**: every deposit and all previously-accrued interest accrue at the full rate starting from the next period boundary. (Historical note: an earlier model required 30 days, then prorated under 30 days — both removed on 2026-05-22.) The only reduction to the earning base is the frozen credit-line collateral.
 - Members can only have ONE active or pending goal at a time
 - Members pick ships from an admin-curated catalog; requests require admin approval
 - **Ship catalog has categories** (e.g., "Titans", "Supers") - ships grouped by category on both member and admin catalog pages
@@ -27,7 +27,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **In-app notifications**: Users receive persistent notifications for key events (goal approved/rejected, deposits, interest accrual, goal completion, withdrawal decisions). Badge count shown in navbar, marked read when viewed.
 - **Automatic wallet sync**: APScheduler runs `sync_wallet()` every N minutes (configurable via `WALLET_SYNC_INTERVAL` env var, default 5, set 0 to disable). Only active under Gunicorn (not in debug mode).
 - **Completion badges**: Pilots on the leaderboard who have previously completed savings goals show military-style shield/crest badges (28px) inline after their name, based on the ship's category (Titan, Super, Dread, Subcap). Badge images served from `static/badges/<category-slug>.svg` (or `.png`). Rich Bootstrap Popover on hover shows the ship render image (96px) and ship name. Always visible regardless of is_public setting. Category stored on `ship_orders` at creation time.
-- **Affiliate earnings distribution**: Admin can enter a dollar amount from affiliate kickbacks, which converts to ISK using a configurable USD-to-ISK ratio (stored in settings), and distributes proportionally to all active accounts based on deposited balance. Recorded as regular deposits with `'affiliate'` source (subject to 30-day interest lag). Members receive notifications.
+- **Affiliate earnings distribution**: Admin can enter a dollar amount from affiliate kickbacks, which converts to ISK using a configurable USD-to-ISK ratio (stored in settings), and distributes proportionally to all active accounts based on deposited balance. Recorded as regular deposits with `'affiliate'` source. Members receive notifications.
 
 ## Files Overview
 
@@ -35,7 +35,7 @@ A web app for Eve Online that lets corp members deposit ISK toward buying ships.
 - **config.py** - Config class reading from env vars (SECRET_KEY, EVE_CLIENT_ID, EVE_CLIENT_SECRET, EVE_CALLBACK_URL, ADMIN_CHARACTER_ID, DATA_DIR)
 - **database.py** - SQLite schema (8 tables: users, ship_catalog, ship_orders, deposits, interest_log, wallet_journal, settings, notifications), Flask g-based connections, Row factory, migration via `_try_alter()`
 - **models.py** - All CRUD: users, catalog, orders, deposits, wallet journal, settings, notifications. Key functions: `get_or_create_user()`, `record_deposit()` (auto-checks goal completion), `user_has_active_or_pending_order()`, `get_leaderboard()` (returns ship_name + is_public), `get_completed_badges_for_active_users()`, `toggle_order_public()`, `update_order_details()`, `create_notification()`, `get_unread_count()`, `mark_notifications_read()`, `get_affiliate_settings()`
-- **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`, `_get_eligible_deposits()`. Uses PERIOD_DAYS dict. Interest accrues only on deposits older than 30 days (eligible balance).
+- **interest.py** - `calculate_current_balance()`, `accrue_interest_for_order()`, `accrue_interest_all()`, `accrue_interest_for_loan()`, `estimate_time_to_goal()`, `_apply_frozen_collateral()`. Uses PERIOD_DAYS dict. Interest accrues on the full savings balance every period; frozen credit-line collateral reduces the earning base. See CLAUDE.md for the canonical convention notes.
 - **wallet.py** - ESI wallet sync: `_get_bank_preston()`, `fetch_wallet_journal()`, `sync_wallet()`. Filters for `player_donation` with `amount > 0`, deduplicates via journal_id, auto-matches to users with active orders
 - **esi.py** - Public ESI helper: `search_type_id()` for ship name→type_id lookup, `get_ship_image_url()` for EVE image server URLs
 - **app.py** - Flask app with 30+ routes, two Preston instances (member: no scope, admin: wallet scope), ProxyFix for Railway, `isk_short`, `ship_image`, and `badge_url` template filters, context processor for notification badge count, logging on callback
