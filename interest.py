@@ -14,18 +14,6 @@ PERIOD_DAYS = {
 }
 
 
-def _get_effective_balance(db, order_id):
-    """Compute weighted deposit balance for interest: deposits aged 30+ days
-    count fully, newer deposits are prorated by age/30."""
-    row = db.execute("""
-        SELECT COALESCE(SUM(
-            amount * MIN(julianday('now') - julianday(deposit_date), 30) / 30.0
-        ), 0) as total
-        FROM deposits WHERE order_id = ?
-    """, (order_id,)).fetchone()
-    return float(row['total'])
-
-
 def _apply_frozen_collateral(user_id, savings_balance, effective_balance):
     """Reduce the effective (interest-earning) balance by the user's outstanding
     credit-line balance. The collateralized portion of savings is frozen and
@@ -43,15 +31,13 @@ def _apply_frozen_collateral(user_id, savings_balance, effective_balance):
 def calculate_current_balance(order):
     """Calculate the current savings balance including pending (un-accrued) interest.
 
-    Interest accrues on the 'effective balance': each deposit is weighted by
-    min(age_in_days / 30, 1.0), so newer deposits earn prorated interest.
-    Previously accrued interest always earns at the full rate. If the user has
-    an outstanding credit-line balance, that portion of savings is frozen
-    (does not accrue).
+    All deposits and previously accrued interest earn at the full rate. If the
+    user has an outstanding credit-line balance, that portion of savings is
+    frozen (does not accrue).
 
     Returns a dict with:
       - savings_balance: all deposits + accrued interest
-      - effective_balance: age-weighted deposits + accrued interest (earns interest)
+      - effective_balance: savings_balance reduced by any frozen credit-line collateral
       - pending_interest: estimated interest since last accrual (not yet recorded)
       - total_balance: savings_balance + pending_interest
       - progress: percentage toward goal_price
@@ -63,13 +49,9 @@ def calculate_current_balance(order):
     accrued_interest = order['interest_earned']
     savings_balance = total_deposits + accrued_interest
 
-    # All deposits earn interest, weighted by age (prorated under 30 days)
-    effective_deposits = _get_effective_balance(db, order['id'])
-    effective_balance = effective_deposits + accrued_interest
-
-    # Frozen collateral: outstanding credit-line balance reduces the earning portion
+    # Full savings balance earns interest; frozen credit-line collateral reduces it.
     effective_balance = _apply_frozen_collateral(
-        order['user_id'], savings_balance, effective_balance
+        order['user_id'], savings_balance, savings_balance
     )
 
     settings = models.get_interest_settings()
@@ -157,12 +139,11 @@ def estimate_time_to_goal(order, balance_info):
 def accrue_interest_for_order(order_id):
     """Record interest accrual for all due periods on a single order.
 
-    Interest accrues on the effective balance: each deposit is weighted by
-    min(age_in_days / 30, 1.0), plus all previously accrued interest at full
-    rate. If the user has paused interest, the order is skipped. If the user
-    has an outstanding credit-line balance, that portion of savings is frozen
-    and the earning base is reduced accordingly. Returns a dict with results
-    or None if order is not active or user is paused.
+    Interest accrues on the full savings balance (deposits + previously accrued
+    interest). If the user has paused interest, the order is skipped. If the
+    user has an outstanding credit-line balance, that portion of savings is
+    frozen and the earning base is reduced accordingly. Returns a dict with
+    results or None if order is not active or user is paused.
     """
     db = database.get_db()
     order = db.execute('SELECT * FROM ship_orders WHERE id = ?', (order_id,)).fetchone()
@@ -179,19 +160,14 @@ def accrue_interest_for_order(order_id):
     period = settings['interest_period']
     period_days = PERIOD_DAYS.get(period, 30)
 
-    # All deposits earn interest, weighted by age (prorated under 30 days)
-    effective_deposits = _get_effective_balance(db, order_id)
-    effective_balance = effective_deposits + order['interest_earned']
-
-    # Frozen collateral: outstanding credit-line balance reduces the earning portion
     savings_balance = order['amount_deposited'] + order['interest_earned']
     effective_balance = _apply_frozen_collateral(
-        order['user_id'], savings_balance, effective_balance
+        order['user_id'], savings_balance, savings_balance
     )
 
     if effective_balance <= 0:
-        logger.info('Order %s (%s): effective_balance=0 (effective_deposits=%.2f, interest_earned=%.2f)',
-                     order_id, order['ship_name'], effective_deposits, order['interest_earned'])
+        logger.info('Order %s (%s): effective_balance=0 (savings_balance=%.2f, interest_earned=%.2f)',
+                     order_id, order['ship_name'], savings_balance, order['interest_earned'])
         return {'periods_accrued': 0, 'interest_added': 0, 'new_balance': 0}
 
     # Find the last accrual date

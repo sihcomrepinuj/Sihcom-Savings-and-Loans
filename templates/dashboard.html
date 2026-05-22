@@ -157,7 +157,7 @@
                     </div>
                 </div>
                 {% if bal['effective_balance'] is defined and bal['effective_balance'] < bal['savings_balance'] %}
-                <small class="text-secondary">New deposits earn prorated interest until 30 days old</small>
+                <small class="text-secondary">Credit line freezes part of this savings from earning interest</small>
                 {% endif %}
                 {% elif order['status'] == 'pending_approval' %}
                 <div class="mb-3">
