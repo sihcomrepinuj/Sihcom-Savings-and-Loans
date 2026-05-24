@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Credit Lines — Sihcom S&amp;L{% endblock %}
+{% block content %}
+
+<div class="row align-items-center mb-5">
+    <div class="col-lg-8">
+        <h1 class="mb-3">Credit Lines</h1>
+        <p class="lead" style="color: var(--sl-muted);">
+            Borrow against your savings. Same rate as your account, no liquidation.
+        </p>
+    </div>
+    <div class="col-lg-4 text-end">
+        {% set period = rates['interest_period'] %}
+        <div style="color: var(--sl-green); font-weight: 600; font-size: 1.25rem;">
+            {{ "%.2f"|format(rates['interest_rate'] * 100) }}% / {{ period }}
+        </div>
+        <small class="text-muted">Current rate</small>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>How it works</h3>
+                <ol class="mb-0">
+                    <li>Build a savings balance first.</li>
+                    <li>Request a draw of any amount up to your total savings.</li>
+                    <li>Once disbursed, the drawn amount is frozen out of your interest-earning balance.</li>
+                    <li>Repay by sending ISK in-game; payments auto-apply to the loan first, then to savings.</li>
+                    <li>When the balance hits zero, your full savings starts earning interest again.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Rate</h3>
+                <p>
+                    <strong style="color: var(--sl-green);">
+                        {{ "%.2f"|format(rates['interest_rate'] * 100) }}% per {{ rates['interest_period'] }}
+                    </strong>
+                </p>
+                <p class="mb-0 text-muted">
+                    Matches your savings rate exactly. The frozen-collateral portion of
+                    your savings stops earning interest, so the net cost is the spread
+                    on the unfrozen portion only.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Rules</h3>
+                <ul class="mb-0">
+                    <li>Maximum draw is your current total savings balance.</li>
+                    <li>One active loan per pilot &mdash; opening a credit line blocks general loans and vice versa.</li>
+                    <li>Withdrawal, cancellation, and goal-funding actions are blocked while a credit line is open.</li>
+                    <li>No liquidation: your savings stays yours; the draw simply freezes the matching portion.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mb-5">
+    {% if session.get('character_id') %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">Request a draw on the dashboard</a>
+    {% else %}
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Log in with EVE</a>
+    {% endif %}
+</div>
+
+{% endblock %}

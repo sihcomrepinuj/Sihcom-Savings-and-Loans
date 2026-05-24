@@ -1,18 +1,91 @@
 {% extends "base.html" %}
 {% block title %}Sihcom Savings &amp; Loans{% endblock %}
-
 {% block content %}
-<div class="text-center mt-5">
-    <h1 class="display-4 mb-3">Sihcom Savings &amp; Loans</h1>
-    <p class="lead mb-4" style="color: var(--sl-muted);">
-        Save toward your next ship. Your deposits earn compound interest until you reach your goal.
-    </p>
-    <a href="{{ url_for('login') }}">
-        <img src="https://web.ccpgamescdn.com/eveonlineassets/developers/eve-sso-login-black-large.png"
-             alt="Log in with EVE Online" class="mt-3">
-    </a>
-    <div class="mt-4">
-        <small><a href="{{ url_for('login', admin=1) }}">Admin Login</a></small>
+
+<div class="p-5 mb-5 rounded-3" style="
+    background: linear-gradient(135deg, var(--sl-navy) 0%, #001f3a 100%);
+    color: #fff;
+">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h1 style="color: #fff; font-size: 2.5rem;">Bank of the corp.</h1>
+            <p class="lead" style="color: #c8d4e2; max-width: 520px;">
+                Save for your next ship. Borrow against your balance. Earn interest while you fly.
+            </p>
+            {% if session.get('character_id') %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-lg"
+               style="background: var(--sl-green); border-color: var(--sl-green); color: #fff;">
+                Go to dashboard
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-lg"
+               style="background: var(--sl-green); border-color: var(--sl-green); color: #fff;">
+                Log in with EVE
+            </a>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<div class="row g-4 mb-5">
+    {% set period = rates['interest_period'] %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Savings</h3>
+                <p class="text-muted">
+                    Save toward a specific ship. Earn compounding interest while you wait.
+                </p>
+                <div style="color: var(--sl-green); font-weight: 600;">
+                    {{ "%.2f"|format(rates['interest_rate'] * 100) }}% / {{ period }}
+                </div>
+                <a href="{{ url_for('product_savings') }}" class="d-inline-block mt-3"
+                   style="font-weight: 600; text-decoration: none;">
+                    Open a goal &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Credit Lines</h3>
+                <p class="text-muted">
+                    Borrow against your savings. Same rate as your account, no liquidation.
+                </p>
+                <div style="color: var(--sl-green); font-weight: 600;">
+                    {{ "%.2f"|format(rates['interest_rate'] * 100) }}% / {{ period }}
+                </div>
+                <a href="{{ url_for('product_credit_lines') }}" class="d-inline-block mt-3"
+                   style="font-weight: 600; text-decoration: none;">
+                    Request a draw &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>General Loans</h3>
+                <p class="text-muted">
+                    Admin-originated loans for major purchases. Fixed rate, flexible payback.
+                </p>
+                <div style="color: var(--sl-red); font-weight: 600;">
+                    {{ "%.2f"|format(rates['general_loan_rate'] * 100) }}% / {{ period }}
+                </div>
+                <a href="{{ url_for('product_loans') }}" class="d-inline-block mt-3"
+                   style="font-weight: 600; text-decoration: none;">
+                    Speak to Bernie &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not session.get('character_id') %}
+<div class="text-center mb-5">
+    <small><a href="{{ url_for('login', admin=1) }}" class="text-muted">Admin Login</a></small>
+</div>
+{% endif %}
+
 {% endblock %}

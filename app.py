@@ -262,9 +262,26 @@ admin_preston_base = Preston(
 
 @app.route('/')
 def index():
-    if 'character_id' in session:
-        return redirect(url_for('dashboard'))
-    return render_template('index.html')
+    rates = models.get_current_rates()
+    return render_template('index.html', rates=rates)
+
+
+@app.route('/savings')
+def product_savings():
+    rates = models.get_current_rates()
+    return render_template('products/savings.html', rates=rates)
+
+
+@app.route('/loans')
+def product_loans():
+    rates = models.get_current_rates()
+    return render_template('products/loans.html', rates=rates)
+
+
+@app.route('/credit-lines')
+def product_credit_lines():
+    rates = models.get_current_rates()
+    return render_template('products/credit_lines.html', rates=rates)
 
 
 @app.route('/login')

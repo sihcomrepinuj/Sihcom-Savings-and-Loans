@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Savings — Sihcom S&amp;L{% endblock %}
+{% block content %}
+
+<div class="row align-items-center mb-5">
+    <div class="col-lg-8">
+        <h1 class="mb-3">Savings</h1>
+        <p class="lead" style="color: var(--sl-muted);">
+            Save toward a specific ship. Earn compounding interest while you wait.
+        </p>
+    </div>
+    <div class="col-lg-4 text-end">
+        {% set period = rates['interest_period'] %}
+        <div style="color: var(--sl-green); font-weight: 600; font-size: 1.25rem;">
+            {{ "%.2f"|format(rates['interest_rate'] * 100) }}% / {{ period }}
+        </div>
+        <small class="text-muted">Current rate</small>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>How it works</h3>
+                <ol class="mb-0">
+                    <li>Pick a ship from the catalog.</li>
+                    <li>Send ISK in-game to Bernie May Doff.</li>
+                    <li>Wallet sync books each deposit to your goal automatically.</li>
+                    <li>Interest accrues every period on your full balance.</li>
+                    <li>When the goal is funded, the admin delivers your ship in-game.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Rate</h3>
+                <p>
+                    <strong style="color: var(--sl-green);">
+                        {{ "%.2f"|format(rates['interest_rate'] * 100) }}% per {{ period }}
+                    </strong>
+                </p>
+                <p class="mb-0 text-muted">
+                    Compounds at the end of each {{ period }} period. New deposits
+                    earn full interest on the next period boundary &mdash; no proration.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Rules</h3>
+                <ul class="mb-0">
+                    <li>One active savings goal per pilot.</li>
+                    <li>Savings boosts only apply to accounts with in-game activity in the previous month.</li>
+                    <li>The bank reserves the right to close an account by paying out balance plus accrued interest.</li>
+                    <li>Withdrawals require admin approval and are blocked while a credit line is open against this savings.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mb-5">
+    {% if session.get('character_id') %}
+    <a href="{{ url_for('catalog') }}" class="btn btn-primary btn-lg">Open a savings goal</a>
+    {% else %}
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Log in with EVE</a>
+    {% endif %}
+</div>
+
+{% endblock %}

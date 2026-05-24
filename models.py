@@ -420,6 +420,15 @@ def get_loan_settings():
     }
 
 
+def get_current_rates():
+    """Snapshot of the rates shown on public product pages."""
+    return {
+        'interest_rate': float(get_setting('interest_rate') or '0.05'),
+        'general_loan_rate': float(get_setting('general_loan_rate') or '0.125'),
+        'interest_period': get_setting('interest_period') or 'monthly',
+    }
+
+
 def get_affiliate_settings():
     return {
         'usd_to_isk_ratio': float(get_setting('usd_to_isk_ratio') or '1000000000'),
