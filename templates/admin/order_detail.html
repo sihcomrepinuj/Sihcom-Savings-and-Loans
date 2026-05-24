@@ -12,7 +12,7 @@
 <div class="row">
     <div class="col-lg-8">
         <!-- Order Summary -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">{{ order['ship_name'] }}</h4>
                 <span class="badge
@@ -28,31 +28,31 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-light">Member</small><br>
-                        <strong class="text-white">{{ owner['character_name'] }}</strong>
+                        <small>Member</small><br>
+                        <strong>{{ owner['character_name'] }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Goal Price</small><br>
-                        <strong class="text-white">{{ order['goal_price'] | isk }}</strong>
+                        <small>Goal Price</small><br>
+                        <strong>{{ order['goal_price'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Started</small><br>
-                        <span class="text-white">{{ order['created_at'][:10] }}</span>
+                        <small>Started</small><br>
+                        <span>{{ order['created_at'][:10] }}</span>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-light">Total Deposited</small><br>
-                        <strong class="text-white">{{ order['amount_deposited'] | isk }}</strong>
+                        <small>Total Deposited</small><br>
+                        <strong>{{ order['amount_deposited'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Interest Earned</small><br>
+                        <small>Interest Earned</small><br>
                         <strong class="text-success">{{ order['interest_earned'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Savings Balance</small><br>
-                        <strong class="text-white">{{ balance['total_balance'] | isk }}</strong>
+                        <small>Savings Balance</small><br>
+                        <strong>{{ balance['total_balance'] | isk }}</strong>
                     </div>
                 </div>
 
@@ -84,7 +84,7 @@
                           <strong>{{ time_to_goal['days'] | format_days_smart }}</strong>
                           ({{ time_to_goal['target_date'] }})
                       </div>
-                      <div class="text-secondary">
+                      <div class="text-muted">
                           Estimated, assuming no further deposits and current interest rate.
                       </div>
                   </div>
@@ -93,14 +93,14 @@
                       Savings is fully frozen by an open credit line &mdash; no interest accruing.
                   </div>
                   {% elif time_to_goal['state'] == 'paused' %}
-                  <div class="mb-3 small text-secondary">Interest paused.</div>
+                  <div class="mb-3 small text-muted">Interest paused.</div>
                   {% endif %}
                 {% endif %}
 
                 {% if order['notes'] %}
                 <div class="mt-2">
-                    <small class="text-light">Notes:</small>
-                    <p class="text-white">{{ order['notes'] }}</p>
+                    <small>Notes:</small>
+                    <p>{{ order['notes'] }}</p>
                 </div>
                 {% endif %}
 
@@ -119,14 +119,14 @@
         </div>
 
         <!-- Deposit History -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Deposit History</h5>
             </div>
             <div class="card-body">
                 {% if deposits %}
                 <div class="table-responsive">
-                    <table class="table table-dark table-striped table-sm">
+                    <table class="table table-striped table-sm">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -158,20 +158,20 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-light mb-0">No deposits yet.</p>
+                <p class="mb-0">No deposits yet.</p>
                 {% endif %}
             </div>
         </div>
 
         <!-- Interest History -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Interest History</h5>
             </div>
             <div class="card-body">
                 {% if interest_logs %}
                 <div class="table-responsive">
-                    <table class="table table-dark table-striped table-sm">
+                    <table class="table table-striped table-sm">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -193,7 +193,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-light mb-0">No interest accrued yet.</p>
+                <p class="mb-0">No interest accrued yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -203,7 +203,7 @@
     <div class="col-lg-4">
         {% if order['status'] == 'pending_approval' %}
         <!-- Approve / Reject -->
-        <div class="card bg-info bg-opacity-10 border-info mb-4">
+        <div class="card bg-info bg-opacity-10 mb-4">
             <div class="card-header bg-info bg-opacity-25">
                 <h5 class="mb-0">Approval Required</h5>
             </div>
@@ -222,7 +222,7 @@
 
         {% if order['status'] == 'active' %}
         <!-- Record Deposit -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Record Deposit</h5>
             </div>
@@ -230,12 +230,12 @@
                 <form method="POST" action="{{ url_for('admin_record_deposit', order_id=order['id']) }}">
                     <div class="mb-3">
                         <label for="amount" class="form-label">Amount (ISK)</label>
-                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                        <input type="number" class="form-control"
                                id="amount" name="amount" step="0.01" min="0.01" required>
                     </div>
                     <div class="mb-3">
                         <label for="note" class="form-label">Note (optional)</label>
-                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                        <input type="text" class="form-control"
                                id="note" name="note" placeholder="e.g. Weekly deposit">
                     </div>
                     <button type="submit" class="btn btn-success w-100">Record Deposit</button>
@@ -284,7 +284,7 @@
 
         <!-- Edit Order -->
         {% if order['status'] in ('active', 'withdrawal_pending', 'completed') %}
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Edit Order</h5>
             </div>
@@ -292,17 +292,17 @@
                 <form method="POST" action="{{ url_for('admin_edit_order', order_id=order['id']) }}">
                     <div class="mb-3">
                         <label for="ship_name" class="form-label">Ship Name</label>
-                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                        <input type="text" class="form-control"
                                id="ship_name" name="ship_name" value="{{ order['ship_name'] }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="goal_price" class="form-label">Goal Price (ISK)</label>
-                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                        <input type="number" class="form-control"
                                id="goal_price" name="goal_price" value="{{ order['goal_price'] }}" step="0.01" min="0.01" required>
                     </div>
                     <div class="mb-3">
                         <label for="category" class="form-label">Category (for badge)</label>
-                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                        <input type="text" class="form-control"
                                id="category" name="category" value="{{ order['category'] or '' }}"
                                list="category-list" placeholder="e.g. Subcap, Dread, Super, Titan">
                         <datalist id="category-list">
@@ -316,7 +316,7 @@
                                {% if order['is_public'] %}checked{% endif %}>
                         <label class="form-check-label" for="is_public">Show ship on Leaderboard</label>
                     </div>
-                    <button type="submit" class="btn btn-outline-light w-100">Save Changes</button>
+                    <button type="submit" class="btn btn-outline-primary w-100">Save Changes</button>
                 </form>
             </div>
         </div>
@@ -347,7 +347,7 @@
                         Complete (Paid Directly)
                     </button>
                 </form>
-                <small class="text-light d-block mb-3">
+                <small class="d-block mb-3">
                     Use when the member has been paid out directly (in-game ship, contract, etc.).
                     Marks the goal completed without recording a deposit.
                 </small>

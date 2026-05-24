@@ -11,7 +11,7 @@
 
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
-        <div class="card bg-secondary bg-opacity-25 border-secondary">
+        <div class="card">
             <div class="card-header">
                 <h4 class="mb-0">Create Savings Goal</h4>
             </div>
@@ -19,7 +19,7 @@
                 <form method="POST">
                     <div class="mb-3">
                         <label for="user_id" class="form-label">Member</label>
-                        <select class="form-select bg-dark text-light border-secondary" id="user_id" name="user_id" required>
+                        <select class="form-select" id="user_id" name="user_id" required>
                             <option value="">Select a member...</option>
                             {% for user in users %}
                             <option value="{{ user['id'] }}">{{ user['character_name'] }}</option>
@@ -29,20 +29,20 @@
 
                     <div class="mb-3">
                         <label for="ship_name" class="form-label">Ship Name</label>
-                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                        <input type="text" class="form-control"
                                id="ship_name" name="ship_name" placeholder="e.g. Rattlesnake" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="goal_price" class="form-label">Goal Price (ISK)</label>
-                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                        <input type="number" class="form-control"
                                id="goal_price" name="goal_price" step="0.01" min="0.01"
                                placeholder="e.g. 500000000" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notes (optional)</label>
-                        <textarea class="form-control bg-dark text-light border-secondary"
+                        <textarea class="form-control"
                                   id="notes" name="notes" rows="3"></textarea>
                     </div>
 

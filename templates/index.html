@@ -4,7 +4,7 @@
 {% block content %}
 <div class="text-center mt-5">
     <h1 class="display-4 mb-3">Sihcom Savings &amp; Loans</h1>
-    <p class="lead text-secondary mb-4">
+    <p class="lead mb-4" style="color: var(--sl-muted);">
         Save toward your next ship. Your deposits earn compound interest until you reach your goal.
     </p>
     <a href="{{ url_for('login') }}">
@@ -12,7 +12,7 @@
              alt="Log in with EVE Online" class="mt-3">
     </a>
     <div class="mt-4">
-        <small><a href="{{ url_for('login', admin=1) }}" class="text-secondary">Admin Login</a></small>
+        <small><a href="{{ url_for('login', admin=1) }}">Admin Login</a></small>
     </div>
 </div>
 {% endblock %}

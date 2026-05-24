@@ -9,17 +9,17 @@
     </ol>
 </nav>
 
-<h2 class="text-white mb-4">Loans</h2>
+<h2 class="mb-4">Loans</h2>
 
 <!-- Pending disbursement -->
-<div class="card bg-secondary bg-opacity-25 border-warning mb-4">
+<div class="card border-warning mb-4">
     <div class="card-header border-warning">
         <h5 class="mb-0 text-warning">Pending Credit Line Disbursements ({{ pending_loans|length }})</h5>
     </div>
     <div class="card-body">
         {% if pending_loans %}
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-sm align-middle">
+            <table class="table table-striped table-sm align-middle">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -35,7 +35,7 @@
                         <td>{{ l['principal'] | isk }}</td>
                         <td>{{ l['created_at'][:16] }}</td>
                         <td>
-                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View / Disburse</a>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-primary btn-sm">View / Disburse</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -43,20 +43,20 @@
             </table>
         </div>
         {% else %}
-        <p class="text-secondary mb-0">No pending disbursements.</p>
+        <p class="text-muted mb-0">No pending disbursements.</p>
         {% endif %}
     </div>
 </div>
 
 <!-- Active loans -->
-<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+<div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">Active Loans ({{ active_loans|length }})</h5>
     </div>
     <div class="card-body">
         {% if active_loans %}
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-sm align-middle">
+            <table class="table table-striped table-sm align-middle">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -90,7 +90,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View</a>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-primary btn-sm">View</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -98,18 +98,18 @@
             </table>
         </div>
         {% else %}
-        <p class="text-secondary mb-0">No active loans.</p>
+        <p class="text-muted mb-0">No active loans.</p>
         {% endif %}
     </div>
 </div>
 
 <!-- Create general loan -->
-<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+<div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">Create General Loan</h5>
     </div>
     <div class="card-body">
-        <p class="text-secondary small">
+        <p class="text-muted small">
             Originates a general loan at {{ "%.2f" | format(loan_settings['general_loan_rate'] * 100) }}% per {{ settings['interest_period'] }},
             compounding. Loan becomes active immediately &mdash; send ISK in-game to the member.
             The member must not have an open loan.
@@ -117,7 +117,7 @@
         <form method="POST" action="{{ url_for('admin_create_general_loan') }}" class="row g-2 align-items-end">
             <div class="col-md-5">
                 <label class="form-label">Member</label>
-                <select name="user_id" class="form-select bg-dark text-light border-secondary" required>
+                <select name="user_id" class="form-select" required>
                     <option value="">Select a member...</option>
                     {% for u in users %}
                     <option value="{{ u['id'] }}">{{ u['character_name'] }}</option>
@@ -127,7 +127,7 @@
             <div class="col-md-4">
                 <label class="form-label">Loan Amount (ISK)</label>
                 <input type="number" name="amount" min="1" step="any" required
-                       class="form-control bg-dark text-light border-secondary">
+                       class="form-control">
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-warning w-100">Create Loan</button>
@@ -137,14 +137,14 @@
 </div>
 
 <!-- All loans (history) -->
-<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+<div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">All Loans ({{ all_loans|length }})</h5>
     </div>
     <div class="card-body">
         {% if all_loans %}
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-sm align-middle">
+            <table class="table table-striped table-sm align-middle">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -180,7 +180,7 @@
                         </td>
                         <td>{{ l['created_at'][:10] }}</td>
                         <td>
-                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-light btn-sm">View</a>
+                            <a href="{{ url_for('admin_loan_detail', loan_id=l['id']) }}" class="btn btn-outline-primary btn-sm">View</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -188,7 +188,7 @@
             </table>
         </div>
         {% else %}
-        <p class="text-secondary mb-0">No loans on record.</p>
+        <p class="text-muted mb-0">No loans on record.</p>
         {% endif %}
     </div>
 </div>

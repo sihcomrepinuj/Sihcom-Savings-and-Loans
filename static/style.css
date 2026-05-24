@@ -1,42 +1,204 @@
-/* Sihcom Savings & Loans - Custom styles */
+/* Sihcom Savings & Loans — design system (2026-05-24) */
 
-.breadcrumb {
-    background: transparent;
+:root {
+    --sl-bg: #fafaf7;
+    --sl-surface: #ffffff;
+    --sl-surface-alt: #f4f4f0;
+    --sl-ink: #1a1f2c;
+    --sl-muted: #5a6472;
+    --sl-border: #e3e5e8;
+    --sl-navy: #003765;
+    --sl-navy-hover: #002a4d;
+    --sl-green: #00834a;
+    --sl-green-hover: #006d3d;
+    --sl-red: #a8232b;
+    --sl-warn: #b8770b;
+    --sl-progress-track: #eceae3;
+    --sl-card-shadow: 0 1px 2px rgba(20, 30, 50, 0.04);
 }
 
-.breadcrumb-item a {
-    color: #6ea8fe;
-    text-decoration: none;
+/* --- Base / typography --- */
+body {
+    background: var(--sl-bg) !important;
+    color: var(--sl-ink) !important;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-variant-numeric: tabular-nums;
 }
 
-.breadcrumb-item a:hover {
-    color: #9ec5fe;
+h1, h2, h3, h4, h5, h6,
+.navbar-brand {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 600;
+    color: var(--sl-navy);
 }
 
-.breadcrumb-item.active {
-    color: #adb5bd;
-}
+a { color: var(--sl-navy); }
+a:hover { color: var(--sl-navy-hover); }
 
+/* --- Nav --- */
+.navbar {
+    background: var(--sl-surface) !important;
+    border-bottom: 1px solid var(--sl-border);
+}
+.navbar .navbar-brand {
+    color: var(--sl-navy) !important;
+    font-size: 1.1rem;
+}
+.navbar .nav-link {
+    color: var(--sl-ink) !important;
+    font-weight: 500;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active { color: var(--sl-navy) !important; }
+.navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%231a1f2c' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3Csvg%3E");
+}
+.dropdown-menu {
+    background: var(--sl-surface);
+    border: 1px solid var(--sl-border);
+}
+.dropdown-menu .dropdown-item { color: var(--sl-ink); }
+.dropdown-menu .dropdown-item:hover { background: var(--sl-surface-alt); color: var(--sl-navy); }
+.dropdown-divider { border-color: var(--sl-border); }
+
+/* --- Cards --- */
 .card {
-    transition: border-color 0.2s;
+    background: var(--sl-surface) !important;
+    border: 1px solid var(--sl-border) !important;
+    color: var(--sl-ink);
+    box-shadow: var(--sl-card-shadow);
 }
+.card-header {
+    background: var(--sl-surface-alt);
+    border-bottom: 1px solid var(--sl-border);
+    color: var(--sl-ink);
+}
+.card-title { color: var(--sl-navy); }
 
+/* --- Buttons --- */
+.btn-primary,
+.btn-outline-light.btn-sm,    /* legacy "View" buttons -> primary navy */
+.btn-info {
+    background: var(--sl-navy);
+    border-color: var(--sl-navy);
+    color: #fff;
+}
+.btn-primary:hover,
+.btn-outline-light.btn-sm:hover,
+.btn-info:hover {
+    background: var(--sl-navy-hover);
+    border-color: var(--sl-navy-hover);
+    color: #fff;
+}
+.btn-outline-primary,
+.btn-outline-info,
+.btn-outline-light {
+    background: var(--sl-surface);
+    border-color: var(--sl-navy);
+    color: var(--sl-navy);
+}
+.btn-outline-primary:hover,
+.btn-outline-info:hover,
+.btn-outline-light:hover {
+    background: var(--sl-navy);
+    color: #fff;
+}
+.btn-success {
+    background: var(--sl-green);
+    border-color: var(--sl-green);
+    color: #fff;
+}
+.btn-success:hover {
+    background: var(--sl-green-hover);
+    border-color: var(--sl-green-hover);
+    color: #fff;
+}
+.btn-outline-success {
+    background: var(--sl-surface);
+    border-color: var(--sl-green);
+    color: var(--sl-green);
+}
+.btn-outline-success:hover {
+    background: var(--sl-green);
+    color: #fff;
+}
+.btn-warning,
+.btn-outline-warning {
+    background: var(--sl-surface);
+    border-color: var(--sl-warn);
+    color: var(--sl-warn);
+}
+.btn-warning:hover,
+.btn-outline-warning:hover {
+    background: var(--sl-warn);
+    color: #fff;
+}
+.btn-danger {
+    background: var(--sl-red);
+    border-color: var(--sl-red);
+    color: #fff;
+}
+.btn-danger:hover { background: #8a1a22; border-color: #8a1a22; }
+
+/* --- Tables --- */
+.table {
+    --bs-table-bg: var(--sl-surface);
+    --bs-table-color: var(--sl-ink);
+    --bs-table-border-color: var(--sl-border);
+    --bs-table-striped-bg: var(--sl-surface-alt);
+    --bs-table-striped-color: var(--sl-ink);
+    --bs-table-hover-bg: var(--sl-surface-alt);
+    --bs-table-hover-color: var(--sl-ink);
+    color: var(--sl-ink);
+    border-color: var(--sl-border);
+}
+.table-dark {
+    --bs-table-bg: var(--sl-surface);
+    --bs-table-color: var(--sl-ink);
+    --bs-table-border-color: var(--sl-border);
+    --bs-table-striped-bg: var(--sl-surface-alt);
+    --bs-table-striped-color: var(--sl-ink);
+    --bs-table-hover-bg: var(--sl-surface-alt);
+    --bs-table-hover-color: var(--sl-ink);
+    color: var(--sl-ink);
+    border-color: var(--sl-border);
+}
+.table thead th {
+    background: var(--sl-surface-alt);
+    color: var(--sl-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--sl-border);
+}
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pos { color: var(--sl-green); font-weight: 500; }
+.neg { color: var(--sl-red); font-weight: 500; }
+
+/* --- Progress bars --- */
 .progress {
-    background-color: #495057;
+    background-color: var(--sl-progress-track);
 }
+.progress-bar {
+    background-color: var(--sl-navy);
+}
+.progress-bar.bg-success { background-color: var(--sl-green) !important; }
+.progress-bar.bg-info    { background-color: var(--sl-navy) !important; }
+.progress-bar.bg-primary { background-color: var(--sl-navy) !important; }
 
-/* Leaderboard glowing progress bar */
+/* Leaderboard glow — retained, retinted via inline hsl() */
 .progress-glow {
     overflow: visible;
     border-radius: 0.375rem;
+    background-color: var(--sl-progress-track);
 }
-
 .progress-glow .progress-bar {
     border-radius: 0.375rem;
     transition: width 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* Completion badges on leaderboard */
+/* Completion badges */
 .completion-badge {
     width: 28px;
     height: 28px;
@@ -45,24 +207,116 @@
     opacity: 0.85;
     transition: opacity 0.2s, transform 0.2s;
     cursor: pointer;
+    /* subtle halo so transparent PNGs read on cream */
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
 }
-
 .completion-badge:hover {
     opacity: 1;
     transform: scale(1.15);
 }
 
-.table-dark {
-    --bs-table-bg: transparent;
+/* --- Alerts --- */
+.alert-info {
+    background: #eaf2fb;
+    border-color: #c5d8ee;
+    color: #1d4577;
+}
+.alert-success {
+    background: #e6f4ec;
+    border-color: #b8dec9;
+    color: #0f5532;
+}
+.alert-warning {
+    background: #fef8ea;
+    border-color: #ecd9a9;
+    color: #6b4509;
+}
+.alert-danger {
+    background: #fbe9eb;
+    border-color: #ecbcc0;
+    color: #6b1219;
+}
+.alert-secondary,
+.alert-light {
+    background: var(--sl-surface-alt);
+    border-color: var(--sl-border);
+    color: var(--sl-ink);
 }
 
-.form-text {
-    font-size: 0.8rem;
-}
+/* --- Badges --- */
+.badge.bg-secondary { background: var(--sl-muted) !important; }
+.badge.bg-primary   { background: var(--sl-navy) !important; }
+.badge.bg-success   { background: var(--sl-green) !important; }
+.badge.bg-warning   { background: var(--sl-warn) !important; color: #fff !important; }
+.badge.bg-danger    { background: var(--sl-red) !important; }
+.badge.bg-info      { background: #2a6cb0 !important; }
 
+/* --- Forms --- */
+.form-control,
+.form-select {
+    background: var(--sl-surface);
+    color: var(--sl-ink);
+    border-color: var(--sl-border);
+}
+.form-control:focus,
+.form-select:focus {
+    background: var(--sl-surface);
+    color: var(--sl-ink);
+    border-color: var(--sl-navy);
+    box-shadow: 0 0 0 0.2rem rgba(0, 55, 101, 0.15);
+}
 .form-label,
-.card-header h5,
-.card-header,
-.form-check-label {
-    color: #fff;
+.form-check-label,
+.card-header h5 {
+    color: var(--sl-ink);
 }
+.form-text { font-size: 0.8rem; color: var(--sl-muted); }
+
+/* --- Breadcrumbs --- */
+.breadcrumb { background: transparent; }
+.breadcrumb-item a {
+    color: var(--sl-navy);
+    text-decoration: none;
+}
+.breadcrumb-item a:hover { color: var(--sl-navy-hover); }
+.breadcrumb-item.active { color: var(--sl-muted); }
+.breadcrumb-item + .breadcrumb-item::before { color: var(--sl-muted); }
+
+/* --- Modals --- */
+.modal-content {
+    background: var(--sl-surface);
+    color: var(--sl-ink);
+    border: 1px solid var(--sl-border);
+}
+.modal-header,
+.modal-footer { border-color: var(--sl-border); }
+
+/* --- Footer / misc --- */
+footer { color: var(--sl-muted); }
+
+/* --- Bernie link macro: re-tint for light bg --- */
+.bernie-link {
+    color: var(--sl-navy) !important;
+    font-weight: 600;
+}
+.bernie-link sup { color: var(--sl-muted) !important; }
+.bernie-copy-btn { color: var(--sl-muted) !important; }
+.bernie-copy-btn:hover { color: var(--sl-navy) !important; }
+
+/* --- Utility shims for templates that haven't been migrated yet ---
+   These let "text-white" / "text-light" / "text-secondary" classes coexist
+   with the light theme during the per-template restyle pass. Remove once
+   every template has been migrated off them. */
+.text-white, .text-light { color: var(--sl-ink) !important; }
+.text-secondary { color: var(--sl-muted) !important; }
+.text-info { color: var(--sl-navy) !important; }
+.text-success { color: var(--sl-green) !important; }
+.text-warning { color: var(--sl-warn) !important; }
+.text-danger { color: var(--sl-red) !important; }
+.bg-dark, .bg-black { background: var(--sl-bg) !important; }
+.bg-secondary.bg-opacity-25,
+.bg-secondary.bg-opacity-10 {
+    background: var(--sl-surface) !important;
+    border-color: var(--sl-border) !important;
+}
+.border-secondary, .border-info { border-color: var(--sl-border) !important; }

@@ -11,7 +11,7 @@
 
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-5">
-        <div class="card bg-secondary bg-opacity-25 border-secondary">
+        <div class="card">
             <div class="card-header">
                 <h4 class="mb-0">Global Interest Settings</h4>
             </div>
@@ -20,22 +20,22 @@
                     <div class="mb-3">
                         <label for="interest_rate" class="form-label">Interest Rate</label>
                         <div class="input-group">
-                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                            <input type="number" class="form-control"
                                    id="interest_rate" name="interest_rate"
                                    step="0.001" min="0" max="1"
                                    value="{{ settings['interest_rate'] }}" required>
-                            <span class="input-group-text bg-dark text-light border-secondary">
+                            <span class="input-group-text">
                                 ({{ "%.1f" | format(settings['interest_rate'] * 100) }}%)
                             </span>
                         </div>
-                        <div class="form-text text-secondary">
+                        <div class="form-text text-muted">
                             Enter as a decimal. E.g., 0.05 = 5%, 0.10 = 10%
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label for="interest_period" class="form-label">Interest Period</label>
-                        <select class="form-select bg-dark text-light border-secondary"
+                        <select class="form-select"
                                 id="interest_period" name="interest_period" required>
                             <option value="daily" {% if settings['interest_period'] == 'daily' %}selected{% endif %}>
                                 Daily (every day)
@@ -57,11 +57,11 @@
             </div>
         </div>
 
-        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+        <div class="card mt-4">
             <div class="card-header">
                 <h5 class="mb-0">How Interest Works</h5>
             </div>
-            <div class="card-body text-secondary">
+            <div class="card-body text-muted">
                 <p>Interest compounds on each member's full savings balance every period.</p>
                 <p>
                     <strong>Frozen collateral:</strong> If a member has an open credit line,
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+        <div class="card mt-4">
             <div class="card-header">
                 <h4 class="mb-0">Loan Settings</h4>
             </div>
@@ -85,15 +85,15 @@
                     <div class="mb-3">
                         <label for="general_loan_rate" class="form-label">General Loan Rate</label>
                         <div class="input-group">
-                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                            <input type="number" class="form-control"
                                    id="general_loan_rate" name="general_loan_rate"
                                    step="0.001" min="0" max="1"
                                    value="{{ loan_settings['general_loan_rate'] }}" required>
-                            <span class="input-group-text bg-dark text-light border-secondary">
+                            <span class="input-group-text">
                                 ({{ "%.2f" | format(loan_settings['general_loan_rate'] * 100) }}%)
                             </span>
                         </div>
-                        <div class="form-text text-secondary">
+                        <div class="form-text text-muted">
                             Per-period rate for admin-originated general loans, compounding on the same period as savings.
                             Credit lines accrue at the savings rate above.
                         </div>
@@ -103,7 +103,7 @@
             </div>
         </div>
 
-        <div class="card bg-secondary bg-opacity-25 border-secondary mt-4">
+        <div class="card mt-4">
             <div class="card-header">
                 <h4 class="mb-0">Affiliate Settings</h4>
             </div>
@@ -112,14 +112,14 @@
                     <div class="mb-3">
                         <label for="usd_to_isk_ratio" class="form-label">USD to ISK Ratio</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-dark text-light border-secondary">$1 =</span>
-                            <input type="number" class="form-control bg-dark text-light border-secondary"
+                            <span class="input-group-text">$1 =</span>
+                            <input type="number" class="form-control"
                                    id="usd_to_isk_ratio" name="usd_to_isk_ratio"
                                    step="1" min="1"
                                    value="{{ affiliate['usd_to_isk_ratio'] | int }}" required>
-                            <span class="input-group-text bg-dark text-light border-secondary">ISK</span>
+                            <span class="input-group-text">ISK</span>
                         </div>
-                        <div class="form-text text-secondary">
+                        <div class="form-text text-muted">
                             How many ISK per $1 USD of affiliate earnings. E.g., 1,000,000,000 = 1B ISK per dollar.
                         </div>
                     </div>

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sihcom redesign — design tokens preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sl-bg: #fafaf7;
+  --sl-surface: #ffffff;
+  --sl-ink: #1a1f2c;
+  --sl-muted: #5a6472;
+  --sl-border: #e3e5e8;
+  --sl-navy: #003765;
+  --sl-navy-hover: #002a4d;
+  --sl-green: #00834a;
+  --sl-red: #a8232b;
+  --sl-warn: #b8770b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--sl-bg);
+  color: var(--sl-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+h1, h2, h3, h4 {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 600;
+  color: var(--sl-navy);
+  margin: 0 0 0.5em;
+  line-height: 1.25;
+}
+h1 { font-size: 32px; }
+h2 { font-size: 22px; margin-top: 0; }
+h3 { font-size: 18px; }
+p { margin: 0 0 0.75em; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.section { margin-bottom: 56px; }
+.section > h2 { border-bottom: 1px solid var(--sl-border); padding-bottom: 8px; margin-bottom: 20px; }
+
+/* Swatches */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.swatch {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--sl-border);
+  background: var(--sl-surface);
+}
+.swatch .chip { height: 70px; border-bottom: 1px solid var(--sl-border); }
+.swatch .meta { padding: 10px 12px; font-size: 13px; }
+.swatch .meta .name { font-weight: 600; display: block; color: var(--sl-ink); font-size: 13px; }
+.swatch .meta .hex { color: var(--sl-muted); font-size: 12px; font-family: 'Inter', monospace; }
+.swatch .meta .use { color: var(--sl-muted); font-size: 12px; margin-top: 4px; display: block; }
+
+/* Mock nav */
+.mocknav {
+  background: var(--sl-surface);
+  border-bottom: 1px solid var(--sl-border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.mocknav .brand {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 600;
+  color: var(--sl-navy);
+  font-size: 18px;
+}
+.mocknav a {
+  color: var(--sl-ink);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.mocknav a:hover { color: var(--sl-navy); }
+.mocknav a.active { color: var(--sl-navy); border-bottom: 2px solid var(--sl-navy); padding-bottom: 4px; }
+.mocknav .right { margin-left: auto; color: var(--sl-muted); font-size: 14px; }
+
+/* Card */
+.card {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 8px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 2px rgba(20, 30, 50, 0.04);
+}
+.card h3 { margin-top: 0; }
+.card .muted { color: var(--sl-muted); font-size: 14px; }
+.cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.card .rate {
+  color: var(--sl-green);
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.card .cta {
+  margin-top: 14px;
+  display: inline-block;
+  color: var(--sl-navy);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+}
+.card .cta:hover { color: var(--sl-navy-hover); }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  margin-right: 6px;
+}
+.btn-primary { background: var(--sl-navy); color: white; }
+.btn-primary:hover { background: var(--sl-navy-hover); }
+.btn-outline { background: white; color: var(--sl-navy); border-color: var(--sl-navy); }
+.btn-outline:hover { background: var(--sl-navy); color: white; }
+.btn-money { background: var(--sl-green); color: white; }
+.btn-money:hover { background: #006d3d; }
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sl-muted);
+  background: #f4f4f0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--sl-border);
+  font-weight: 600;
+}
+td { padding: 12px 14px; border-bottom: 1px solid var(--sl-border); font-size: 14px; }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pos { color: var(--sl-green); font-weight: 500; }
+.neg { color: var(--sl-red); font-weight: 500; }
+
+/* Hero mock */
+.hero {
+  background: linear-gradient(135deg, #003765 0%, #001f3a 100%);
+  color: white;
+  padding: 56px 40px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 32px;
+}
+.hero h1 { color: white; font-size: 38px; margin-bottom: 16px; }
+.hero p { font-size: 16px; color: #c8d4e2; max-width: 480px; margin-bottom: 24px; }
+.hero .btn-primary { background: var(--sl-green); }
+.hero .btn-primary:hover { background: #006d3d; }
+.hero-image {
+  background: rgba(255,255,255,0.05);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 8px;
+  aspect-ratio: 16/10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6e8ba8;
+  font-size: 13px;
+}
+
+/* Progress */
+.progress-wrap { margin-top: 12px; }
+.progress-track {
+  background: #eceae3;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+.progress-fill {
+  background: var(--sl-navy);
+  height: 100%;
+  border-radius: 999px;
+}
+.progress-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--sl-muted); margin-top: 6px; }
+
+.alert-warn {
+  background: #fef8ea;
+  border: 1px solid #ecd9a9;
+  color: #6b4509;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.note { font-size: 14px; color: var(--sl-muted); max-width: 720px; }
+
+.fontspec {
+  font-size: 12px;
+  color: var(--sl-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: -4px;
+  margin-bottom: 14px;
+}
+</style>
+</head>
+<body>
+<div class="mocknav">
+  <span class="brand">Sihcom Savings &amp; Loans</span>
+  <a href="#" class="active">Dashboard</a>
+  <a href="#">Ship Catalog</a>
+  <a href="#">Leaderboard</a>
+  <span class="right">Bernie May Doff &middot; Logout</span>
+</div>
+
+<div class="wrap">
+
+  <div class="section">
+    <h1>Design tokens preview</h1>
+    <p class="note">Phase 1 of the bank-style redesign. Below: color swatches, type samples, and how the tokens compose into common components. Hero and product cards are a peek at Phase 2.</p>
+  </div>
+
+  <div class="section">
+    <h2>Colors</h2>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="chip" style="background:#fafaf7"></div>
+        <div class="meta"><span class="name">--sl-bg</span><span class="hex">#fafaf7</span><span class="use">Page background (cream)</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#ffffff;border-bottom-color:#e3e5e8"></div>
+        <div class="meta"><span class="name">--sl-surface</span><span class="hex">#ffffff</span><span class="use">Cards, tables, nav</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#1a1f2c"></div>
+        <div class="meta"><span class="name">--sl-ink</span><span class="hex">#1a1f2c</span><span class="use">Body text</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#5a6472"></div>
+        <div class="meta"><span class="name">--sl-muted</span><span class="hex">#5a6472</span><span class="use">Secondary text, metadata</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#e3e5e8"></div>
+        <div class="meta"><span class="name">--sl-border</span><span class="hex">#e3e5e8</span><span class="use">Card borders, dividers</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#003765"></div>
+        <div class="meta"><span class="name">--sl-navy</span><span class="hex">#003765</span><span class="use">Primary, links, headlines</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#002a4d"></div>
+        <div class="meta"><span class="name">--sl-navy-hover</span><span class="hex">#002a4d</span><span class="use">Hover state</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#00834a"></div>
+        <div class="meta"><span class="name">--sl-green</span><span class="hex">#00834a</span><span class="use">Positive money (deposits, interest)</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#a8232b"></div>
+        <div class="meta"><span class="name">--sl-red</span><span class="hex">#a8232b</span><span class="use">Negative (loans, overdue)</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#b8770b"></div>
+        <div class="meta"><span class="name">--sl-warn</span><span class="hex">#b8770b</span><span class="use">Warnings, pending states</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Typography</h2>
+    <div class="card">
+      <h1>The capital fleet sails at dawn</h1>
+      <div class="fontspec">Source Serif 4 / 600 — headline</div>
+      <p>Inter / 400 — body. Members save toward ship goals; the corp pays interest. Recent deposits earn full interest immediately. <strong>Interest accrues monthly</strong> based on your current savings balance.</p>
+      <p class="muted">Inter / 400 muted — secondary text and metadata.</p>
+      <p class="num">Deposit <strong class="pos">+1,250,000,000.00 ISK</strong> &middot; Outstanding <strong class="neg">-475,000,000.00 ISK</strong></p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Buttons</h2>
+    <p>
+      <a class="btn btn-primary" href="#">Open a savings goal</a>
+      <a class="btn btn-outline" href="#">Browse ships</a>
+      <a class="btn btn-money" href="#">Make deposit</a>
+    </p>
+    <p class="note">Primary navy for default actions. Outline navy for secondary. Green only for money-positive verbs (deposit, fund, pay off).</p>
+  </div>
+
+  <div class="section">
+    <h2>Product cards <span style="font-size:13px;color:var(--sl-muted);font-family:Inter;font-weight:400">— Phase 2 preview</span></h2>
+    <div class="cards-row">
+      <div class="card">
+        <h3>Savings</h3>
+        <p class="muted">Save toward a specific ship. Earn compounding interest while you wait.</p>
+        <div class="rate">2.0% / month</div>
+        <a class="cta" href="#">Open a goal →</a>
+      </div>
+      <div class="card">
+        <h3>Credit Lines</h3>
+        <p class="muted">Borrow against your savings. Same rate as your account, no liquidation.</p>
+        <div class="rate">2.0% / month</div>
+        <a class="cta" href="#">Request a draw →</a>
+      </div>
+      <div class="card">
+        <h3>General Loans</h3>
+        <p class="muted">Admin-originated loans for major purchases. Fixed rate, flexible payback.</p>
+        <div class="rate">12.5% / month</div>
+        <a class="cta" href="#">Speak to Bernie →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Savings goal card (dashboard preview)</h2>
+    <div class="card" style="max-width:560px">
+      <h3>Nyx — capital savings goal</h3>
+      <p class="muted">Target: 24,500,000,000 ISK · Started Mar 12, 2026</p>
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" style="width:42%"></div>
+        </div>
+        <div class="progress-meta">
+          <span>10,290,000,000 ISK saved</span>
+          <span>42%</span>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:14px">Est. time to ship: <strong style="color:var(--sl-ink)">~4 months</strong> at current accrual</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Table — deposit history</h2>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Type</th><th class="num">Amount</th><th class="num">Interest</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2026-05-22</td><td>Deposit</td><td class="num pos">+500,000,000.00</td><td class="num">—</td></tr>
+        <tr><td>2026-05-18</td><td>Interest accrual</td><td class="num">—</td><td class="num pos">+8,250,000.00</td></tr>
+        <tr><td>2026-05-10</td><td>Deposit</td><td class="num pos">+1,000,000,000.00</td><td class="num">—</td></tr>
+        <tr><td>2026-04-30</td><td>Credit line draw</td><td class="num neg">-200,000,000.00</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Hero <span style="font-size:13px;color:var(--sl-muted);font-family:Inter;font-weight:400">— Phase 2 landing</span></h2>
+    <div class="hero">
+      <div>
+        <h1>Bank of the corp.</h1>
+        <p>Save for your next ship. Borrow against your balance. Earn interest while you fly.</p>
+        <a class="btn btn-primary" href="#">Log in with EVE</a>
+      </div>
+      <div class="hero-image">[ ship render slot — Nyx, Avatar, etc. ]</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Alert</h2>
+    <div class="alert-warn">Your savings has a frozen-collateral portion of 250,000,000 ISK from an open credit line. Interest accrues only on the unfrozen portion.</div>
+  </div>
+
+</div>
+</body>
+</html>

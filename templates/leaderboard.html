@@ -2,15 +2,15 @@
 {% block title %}Leaderboard - Sihcom S&amp;L{% endblock %}
 
 {% block content %}
-<h2 class="mb-4 text-white">Savings Leaderboard</h2>
+<h2 class="mb-4">Savings Leaderboard</h2>
 
 {% if entries %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="card bg-secondary bg-opacity-25 border-secondary">
+        <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0">
+                    <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th style="width: 50px;">#</th>
@@ -22,8 +22,8 @@
                         <tbody>
                             {% for entry in entries %}
                             <tr>
-                                <td class="text-secondary">{{ loop.index }}</td>
-                                <td class="text-white fw-semibold">
+                                <td class="text-muted">{{ loop.index }}</td>
+                                <td class="fw-semibold">
                                     {{ entry['character_name'] }}
                                     {% for badge in badges.get(entry['character_name'], []) %}
                                     <img src="{{ badge['category'] | badge_url }}"
@@ -38,9 +38,9 @@
                                 </td>
                                 <td>
                                     {% if entry['is_public'] %}
-                                    <span class="text-light">{{ entry['ship_name'] }}</span>
+                                    <span>{{ entry['ship_name'] }}</span>
                                     {% else %}
-                                    <span class="text-secondary" title="This pilot's goal is private">&#x2753;</span>
+                                    <span class="text-muted" title="This pilot's goal is private">&#x2753;</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -61,7 +61,7 @@
                                                 aria-valuemin="0" aria-valuemax="100">
                                             </div>
                                         </div>
-                                        <span class="text-light" style="min-width: 50px; text-align: right;">
+                                        <span style="min-width: 50px; text-align: right;">
                                             {{ entry['progress'] }}%
                                         </span>
                                     </div>
@@ -73,13 +73,13 @@
                 </div>
             </div>
         </div>
-        <p class="text-secondary text-center mt-3">
+        <p class="text-muted text-center mt-3">
             <small>Showing all active savers, ranked by progress toward their goal.</small>
         </p>
     </div>
 </div>
 {% else %}
-<div class="text-center mt-5 text-secondary">
+<div class="text-center mt-5 text-muted">
     <p class="lead">No active savings goals yet. Be the first!</p>
     <a href="{{ url_for('catalog') }}" class="btn btn-success">Browse Ships</a>
 </div>

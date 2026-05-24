@@ -12,7 +12,7 @@
 <h2 class="mb-4">Manage Ship Catalog</h2>
 
 <!-- Add Ship Form -->
-<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+<div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">Add New Ship</h5>
     </div>
@@ -21,18 +21,18 @@
             <div class="row g-3 align-items-end">
                 <div class="col-md-2">
                     <label for="ship_name" class="form-label">Ship Name</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary"
+                    <input type="text" class="form-control"
                            id="ship_name" name="ship_name" placeholder="e.g. Ragnarok" required>
                 </div>
                 <div class="col-md-2">
                     <label for="price" class="form-label">Price (ISK)</label>
-                    <input type="number" class="form-control bg-dark text-light border-secondary"
+                    <input type="number" class="form-control"
                            id="price" name="price" step="0.01" min="0.01"
                            placeholder="e.g. 500000000" required>
                 </div>
                 <div class="col-md-2">
                     <label for="category" class="form-label">Category</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary"
+                    <input type="text" class="form-control"
                            id="category" name="category" list="category-list"
                            placeholder="e.g. Titans">
                     <datalist id="category-list">
@@ -43,7 +43,7 @@
                 </div>
                 <div class="col-md-3">
                     <label for="description" class="form-label">Description (optional)</label>
-                    <input type="text" class="form-control bg-dark text-light border-secondary"
+                    <input type="text" class="form-control"
                            id="description" name="description" placeholder="Short description">
                 </div>
                 <div class="col-md-2">
@@ -55,14 +55,14 @@
 </div>
 
 <!-- Catalog List -->
-<div class="card bg-secondary bg-opacity-25 border-secondary">
+<div class="card">
     <div class="card-header">
         <h5 class="mb-0">Current Catalog</h5>
     </div>
     <div class="card-body">
         {% if ships %}
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-sm">
+            <table class="table table-striped table-sm">
                 <thead>
                     <tr>
                         <th>Image</th>
@@ -90,24 +90,24 @@
                             {% if ship['type_id'] %}
                             <img src="{{ ship['type_id'] | ship_image(64) }}" alt="" style="height: 40px;">
                             {% else %}
-                            <span class="text-secondary" title="No image">--</span>
+                            <span class="text-muted" title="No image">--</span>
                             {% endif %}
                         </td>
                         <td>
-                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                            <input type="text" class="form-control form-control-sm"
                                    name="ship_name" value="{{ ship['ship_name'] }}" required>
                         </td>
                         <td>
-                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                            <input type="number" class="form-control form-control-sm"
                                    name="price" value="{{ ship['price'] }}" step="0.01" min="0.01" required>
                         </td>
                         <td>
-                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                            <input type="text" class="form-control form-control-sm"
                                    name="category" value="{{ ship['category'] or 'Uncategorized' }}"
                                    list="category-list-edit">
                         </td>
                         <td>
-                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                            <input type="text" class="form-control form-control-sm"
                                    name="description" value="{{ ship['description'] or '' }}">
                         </td>
                         <td>
@@ -144,7 +144,7 @@
             {% endfor %}
         </datalist>
         {% else %}
-        <p class="text-secondary mb-0">No ships in catalog. Add one above!</p>
+        <p class="text-muted mb-0">No ships in catalog. Add one above!</p>
         {% endif %}
     </div>
 </div>

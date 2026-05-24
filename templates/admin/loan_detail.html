@@ -12,7 +12,7 @@
 
 <div class="row">
     <div class="col-lg-8">
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">
                     {% if loan['product_type'] == 'credit_line' %}Credit Line{% else %}General Loan{% endif %}
@@ -29,18 +29,18 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-sm-4">
-                        <small class="text-light">Principal</small><br>
-                        <strong class="text-white">{{ loan['principal'] | isk }}</strong>
+                        <small>Principal</small><br>
+                        <strong>{{ loan['principal'] | isk }}</strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Outstanding Balance</small><br>
+                        <small>Outstanding Balance</small><br>
                         <strong class="text-warning">
                             {% if pending %}{{ pending['projected_balance'] | isk }}{% else %}{{ loan['current_balance'] | isk }}{% endif %}
                         </strong>
                     </div>
                     <div class="col-sm-4">
-                        <small class="text-light">Rate</small><br>
-                        <strong class="text-white">{{ "%.2f" | format(rate * 100) }}% / {{ period }}</strong>
+                        <small>Rate</small><br>
+                        <strong>{{ "%.2f" | format(rate * 100) }}% / {{ period }}</strong>
                     </div>
                 </div>
 
@@ -59,19 +59,19 @@
 
                 <div class="row">
                     <div class="col-sm-4">
-                        <small class="text-light">Requested</small><br>
-                        <span class="text-white">{{ loan['created_at'][:10] }}</span>
+                        <small>Requested</small><br>
+                        <span>{{ loan['created_at'][:10] }}</span>
                     </div>
                     {% if loan['disbursed_at'] %}
                     <div class="col-sm-4">
-                        <small class="text-light">Disbursed</small><br>
-                        <span class="text-white">{{ loan['disbursed_at'][:10] }}</span>
+                        <small>Disbursed</small><br>
+                        <span>{{ loan['disbursed_at'][:10] }}</span>
                     </div>
                     {% endif %}
                     {% if loan['closed_at'] %}
                     <div class="col-sm-4">
-                        <small class="text-light">Paid in Full</small><br>
-                        <span class="text-white">{{ loan['closed_at'][:10] }}</span>
+                        <small>Paid in Full</small><br>
+                        <span>{{ loan['closed_at'][:10] }}</span>
                     </div>
                     {% endif %}
                 </div>
@@ -79,7 +79,7 @@
         </div>
 
         <!-- Admin actions -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Admin Actions</h5>
             </div>
@@ -88,12 +88,12 @@
                 <form method="POST" action="{{ url_for('admin_disburse_loan', loan_id=loan['id']) }}" class="mb-3"
                       onsubmit="return confirm('Confirm: ISK has been sent in-game to {{ owner['character_name'] }}?');">
                     <button type="submit" class="btn btn-warning">Mark Disbursed</button>
-                    <small class="text-light ms-2">Confirm after sending ISK to the borrower in EVE.</small>
+                    <small class="ms-2">Confirm after sending ISK to the borrower in EVE.</small>
                 </form>
                 <form method="POST" action="{{ url_for('admin_cancel_pending_loan', loan_id=loan['id']) }}" class="mb-3"
                       onsubmit="return confirm('Reject {{ '{:,.2f}'.format(loan['principal']) }} ISK draw from {{ owner['character_name'] }}? The member will be notified and can re-request.');">
                     <button type="submit" class="btn btn-outline-danger">Reject Draw</button>
-                    <small class="text-light ms-2">Use when the requested amount is wrong or the draw should not proceed.</small>
+                    <small class="ms-2">Use when the requested amount is wrong or the draw should not proceed.</small>
                 </form>
                 {% endif %}
 
@@ -115,16 +115,16 @@
                     <div class="col-md-4">
                         <label class="form-label">Manual Payment (ISK)</label>
                         <input type="number" name="amount" min="0.01" step="any" required
-                               class="form-control bg-dark text-light border-secondary">
+                               class="form-control">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Note</label>
                         <input type="text" name="note"
-                               class="form-control bg-dark text-light border-secondary"
+                               class="form-control"
                                placeholder="e.g. PLEX, contract, hand-off">
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-light w-100">Apply Payment</button>
+                        <button type="submit" class="btn btn-outline-primary w-100">Apply Payment</button>
                     </div>
                 </form>
                 {% endif %}
@@ -132,14 +132,14 @@
         </div>
 
         <!-- Payment History -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Payment History</h5>
             </div>
             <div class="card-body">
                 {% if payments %}
                 <div class="table-responsive">
-                    <table class="table table-dark table-striped table-sm">
+                    <table class="table table-striped table-sm">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -169,20 +169,20 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-secondary mb-0">No payments yet.</p>
+                <p class="text-muted mb-0">No payments yet.</p>
                 {% endif %}
             </div>
         </div>
 
         <!-- Interest History -->
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Interest History</h5>
             </div>
             <div class="card-body">
                 {% if interest_logs %}
                 <div class="table-responsive">
-                    <table class="table table-dark table-striped table-sm">
+                    <table class="table table-striped table-sm">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -204,36 +204,36 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-secondary mb-0">No interest accrued yet.</p>
+                <p class="text-muted mb-0">No interest accrued yet.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
     <div class="col-lg-4">
-        <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Summary</h5>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled">
                     <li class="mb-2">
-                        <small class="text-light">Borrower</small><br>
-                        <span class="text-white">{{ owner['character_name'] }}</span>
+                        <small>Borrower</small><br>
+                        <span>{{ owner['character_name'] }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-light">Product</small><br>
-                        <span class="text-white">
+                        <small>Product</small><br>
+                        <span>
                             {% if loan['product_type'] == 'credit_line' %}Credit Line{% else %}General Loan{% endif %}
                         </span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-light">Principal</small><br>
-                        <span class="text-white">{{ loan['principal'] | isk }}</span>
+                        <small>Principal</small><br>
+                        <span>{{ loan['principal'] | isk }}</span>
                     </li>
                     <li class="mb-2">
-                        <small class="text-light">Rate</small><br>
-                        <span class="text-white">{{ "%.2f" | format(rate * 100) }}% / {{ period }}, compounding</span>
+                        <small>Rate</small><br>
+                        <span>{{ "%.2f" | format(rate * 100) }}% / {{ period }}, compounding</span>
                     </li>
                 </ul>
             </div>

@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Loans section -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="text-white mb-0">My Loan</h2>
+    <h2 class="mb-0">My Loan</h2>
     {% if can_request_credit_line %}
     <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#requestDrawModal">
         Request Credit Line Draw
@@ -14,11 +14,11 @@
 </div>
 
 {% if open_loan %}
-<div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+<div class="card mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-start">
             <div>
-                <h5 class="card-title text-white mb-1">
+                <h5 class="card-title mb-1">
                     {% if open_loan['product_type'] == 'credit_line' %}Credit Line{% else %}General Loan{% endif %}
                 </h5>
                 <span class="badge
@@ -28,24 +28,24 @@
                     {{ open_loan['status'] | replace('_', ' ') | title }}
                 </span>
             </div>
-            <a href="{{ url_for('loan_detail', loan_id=open_loan['id']) }}" class="btn btn-outline-light btn-sm">View Loan</a>
+            <a href="{{ url_for('loan_detail', loan_id=open_loan['id']) }}" class="btn btn-outline-primary btn-sm">View Loan</a>
         </div>
         {% if open_loan['status'] == 'active' and loan_pending %}
         <div class="row mt-2">
             <div class="col-md-4">
-                <small class="text-light">Original Principal</small><br>
-                <strong class="text-white">{{ open_loan['principal'] | isk }}</strong>
+                <small>Original Principal</small><br>
+                <strong>{{ open_loan['principal'] | isk }}</strong>
             </div>
             <div class="col-md-4">
-                <small class="text-light">Outstanding Balance</small><br>
+                <small>Outstanding Balance</small><br>
                 <strong class="text-warning">{{ loan_pending['projected_balance'] | isk }}</strong>
                 {% if loan_pending['pending_interest'] > 0 %}
                 <small class="text-warning">(incl. ~{{ loan_pending['pending_interest'] | isk }} pending)</small>
                 {% endif %}
             </div>
             <div class="col-md-4">
-                <small class="text-light">Repayment</small><br>
-                <span class="text-light">Send ISK to {{ bernie_link() }}; auto-applied to loan first.</span>
+                <small>Repayment</small><br>
+                <span>Send ISK to {{ bernie_link() }}; auto-applied to loan first.</span>
             </div>
         </div>
         {% elif open_loan['status'] == 'pending_disbursement' %}
@@ -54,10 +54,10 @@
     </div>
 </div>
 {% else %}
-<div class="card bg-secondary bg-opacity-10 border-secondary mb-4">
-    <div class="card-body text-secondary">
+<div class="card mb-4">
+    <div class="card-body text-muted">
         {% if total_savings > 0 %}
-        No outstanding loan. You can draw a credit line up to <strong class="text-white">{{ total_savings | isk }}</strong> against your savings.
+        No outstanding loan. You can draw a credit line up to <strong>{{ total_savings | isk }}</strong> against your savings.
         {% else %}
         No outstanding loan. Build up a savings balance to become eligible for a credit line.
         {% endif %}
@@ -70,26 +70,26 @@
 <div class="modal fade" id="requestDrawModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form method="POST" action="{{ url_for('request_credit_line_draw') }}">
-            <div class="modal-content bg-dark text-light border border-secondary">
-                <div class="modal-header border-secondary">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title">Request Credit Line Draw</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-secondary">
-                        Borrow up to <strong class="text-white">{{ total_savings | isk }}</strong> against your savings.
+                    <p class="text-muted">
+                        Borrow up to <strong>{{ total_savings | isk }}</strong> against your savings.
                         The drawn amount freezes the matching portion of your savings until repaid.
                         Interest accrues at the savings rate.
                     </p>
                     <div class="mb-3">
                         <label for="drawAmount" class="form-label">Draw amount (ISK)</label>
-                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                        <input type="number" class="form-control"
                                id="drawAmount" name="amount" min="1" max="{{ total_savings | int }}"
                                step="any" required>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-warning">Request Draw</button>
                 </div>
             </div>
@@ -99,7 +99,7 @@
 {% endif %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="text-white">My Savings Goals</h2>
+    <h2>My Savings Goals</h2>
     <a href="{{ url_for('catalog') }}" class="btn btn-outline-success btn-sm">Browse Ships</a>
 </div>
 
@@ -108,13 +108,13 @@
     {% for order in orders %}
     {% set bal = balances.get(order['id']) %}
     <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card bg-secondary bg-opacity-25 border-secondary h-100">
+        <div class="card h-100">
             {% if order['type_id'] %}
             <img src="{{ order['type_id'] | ship_image(128) }}" class="card-img-top p-2"
                  alt="{{ order['ship_name'] }}" style="height: 120px; object-fit: contain;">
             {% endif %}
             <div class="card-body">
-                <h5 class="card-title text-white">{{ order['ship_name'] }}</h5>
+                <h5 class="card-title">{{ order['ship_name'] }}</h5>
                 <span class="badge
                     {% if order['status'] == 'pending_approval' %}bg-warning text-dark
                     {% elif order['status'] == 'active' %}bg-success
@@ -127,21 +127,21 @@
                 </span>
 
                 <div class="mb-2">
-                    <small class="text-light">Goal</small><br>
-                    <strong class="text-white">{{ order['goal_price'] | isk }}</strong>
+                    <small>Goal</small><br>
+                    <strong>{{ order['goal_price'] | isk }}</strong>
                 </div>
 
                 {% if bal %}
                 <div class="mb-2">
-                    <small class="text-light">Savings Balance</small><br>
-                    <strong class="text-white">{{ bal['total_balance'] | isk }}</strong>
+                    <small>Savings Balance</small><br>
+                    <strong>{{ bal['total_balance'] | isk }}</strong>
                     {% if bal['pending_interest'] > 0 %}
                     <small class="text-success">(incl. ~{{ bal['pending_interest'] | isk }} pending)</small>
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <small class="text-light">Remaining</small><br>
-                    <strong class="text-white">{{ bal['remaining'] | isk }}</strong>
+                    <small>Remaining</small><br>
+                    <strong>{{ bal['remaining'] | isk }}</strong>
                 </div>
 
                 <div class="progress mb-2" style="height: 20px;">
@@ -157,7 +157,7 @@
                     </div>
                 </div>
                 {% if bal['effective_balance'] is defined and bal['effective_balance'] < bal['savings_balance'] %}
-                <small class="text-secondary">Credit line freezes part of this savings from earning interest</small>
+                <small class="text-muted">Credit line freezes part of this savings from earning interest</small>
                 {% endif %}
                 {% elif order['status'] == 'pending_approval' %}
                 <div class="mb-3">
@@ -176,7 +176,7 @@
                                name="is_public" value="1"
                                {% if order['is_public'] %}checked{% endif %}
                                onchange="this.form.submit()">
-                        <label class="form-check-label text-light" for="public_{{ order['id'] }}">
+                        <label class="form-check-label" for="public_{{ order['id'] }}">
                             Show on Leaderboard
                         </label>
                     </div>
@@ -184,7 +184,7 @@
                 {% endif %}
 
                 {% if order['status'] not in ('pending_approval',) %}
-                <a href="{{ url_for('order_detail', order_id=order['id']) }}" class="btn btn-outline-light btn-sm">
+                <a href="{{ url_for('order_detail', order_id=order['id']) }}" class="btn btn-outline-primary btn-sm">
                     View Details
                 </a>
                 {% endif %}
@@ -195,13 +195,13 @@
 </div>
 
 <!-- How to Deposit - always accessible -->
-<div class="card bg-secondary bg-opacity-25 border-secondary mt-2 mb-4">
+<div class="card mt-2 mb-4">
     <div class="card-body">
-        <a class="text-info text-decoration-none" data-bs-toggle="collapse" href="#depositHelp" role="button" aria-expanded="false">
-            How do I make a deposit? <small class="text-secondary">(click to expand)</small>
+        <a class="text-decoration-none" data-bs-toggle="collapse" href="#depositHelp" role="button" aria-expanded="false">
+            How do I make a deposit? <small class="text-muted">(click to expand)</small>
         </a>
         <div class="collapse mt-3" id="depositHelp">
-            <ol class="text-light mb-0">
+            <ol class="mb-0">
                 <li>Open EVE Online and send ISK <em>from the character whose goal you want to contribute to</em> to {{ bernie_link() }}</li>
                 <li>You can leave the <em>Reason</em> field blank</li>
                 <li>The admin will sync the wallet and your deposit will appear here automatically</li>
@@ -211,7 +211,7 @@
     </div>
 </div>
 {% else %}
-<div class="text-center mt-5 text-secondary">
+<div class="text-center mt-5 text-muted">
     <p class="lead">No savings goals yet.</p>
     <a href="{{ url_for('catalog') }}" class="btn btn-success">Browse Available Ships</a>
 </div>
