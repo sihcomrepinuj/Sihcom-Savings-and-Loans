@@ -8,6 +8,14 @@ import database
 import interest
 
 
+# Wallet-journal ref_types that represent ISK arriving in the bank wallet.
+# player_donation is a character-to-character transfer; corporation_account_withdrawal
+# is a corp director/CEO moving ISK from a corp wallet to the bank character.
+PLAYER_DONATION = 'player_donation'
+CORP_WITHDRAWAL = 'corporation_account_withdrawal'
+INCOMING_REF_TYPES = (PLAYER_DONATION, CORP_WITHDRAWAL)
+
+
 def _get_bank_preston():
     """Build an authenticated Preston instance using the admin's stored refresh token."""
     admin = models.get_admin_user()
@@ -73,10 +81,12 @@ def sync_wallet():
 
     journal = fetch_wallet_journal(auth, character_id)
 
-    # Filter: player_donation, positive amount (ISK received), not already processed
+    # Filter: incoming ISK (player donations + corp wallet transfers), positive
+    # amount, not already processed. Corp transfers can't be auto-matched (see
+    # the loop below) so they fall through to the unmatched bucket.
     donations = [
         e for e in journal
-        if e.get('ref_type') == 'player_donation'
+        if e.get('ref_type') in INCOMING_REF_TYPES
         and e.get('amount', 0) > 0
     ]
 
@@ -96,8 +106,13 @@ def sync_wallet():
         reason = entry.get('reason', '')
         journal_date = entry.get('date', '')
 
-        # Try to find the sender in our users table
-        sender_user = models.get_user_by_character_id(sender_id)
+        # Corp wallet transfers always go to unmatched for manual allocation:
+        # first_party_id is the initiating director/CEO, not the intended
+        # beneficiary, so auto-matching would credit the wrong member (or even
+        # the director, if they happen to be one). Still resolve the name for
+        # display, but don't look up an order/loan to match against.
+        is_corp_withdrawal = entry.get('ref_type') == CORP_WITHDRAWAL
+        sender_user = None if is_corp_withdrawal else models.get_user_by_character_id(sender_id)
 
         if sender_user:
             sender_name = sender_user['character_name']
