@@ -23,7 +23,7 @@
                 <th>Date</th>
                 <th>Sender</th>
                 <th>Amount</th>
-                <th>Reason</th>
+                <th>Reason / Details</th>
                 <th>Assign To</th>
                 <th>Actions</th>
             </tr>
@@ -34,7 +34,7 @@
                 <td>{{ entry['journal_date'][:10] }}</td>
                 <td>{{ entry['sender_name'] }}</td>
                 <td>{{ entry['amount'] | isk }}</td>
-                <td>{{ entry['reason'] or '-' }}</td>
+                <td>{{ entry['reason'] or entry['description'] or '-' }}</td>
                 <td>
                     <form method="POST" action="{{ url_for('admin_assign_unmatched', journal_id=entry['journal_id']) }}"
                           class="d-flex gap-2" id="assign-{{ entry['journal_id'] }}">

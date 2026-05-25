@@ -44,6 +44,25 @@ def _resolve_character_name(auth, character_id):
         return 'Unknown'
 
 
+def _resolve_party_name(auth, party_id):
+    """Resolve a journal party id to a name, trying character then corporation.
+
+    Corp-wallet transfers put a corporation id in first_party_id, so the
+    character lookup misses; fall back to the corp endpoint before giving up.
+    """
+    name = _resolve_character_name(auth, party_id)
+    if name != 'Unknown':
+        return name
+    try:
+        result = auth.get_op(
+            'get_corporations_corporation_id',
+            corporation_id=party_id,
+        )
+        return result.get('name', 'Unknown')
+    except Exception:
+        return 'Unknown'
+
+
 def fetch_wallet_journal(auth, character_id):
     """Fetch all pages of the wallet journal from ESI."""
     all_entries = []
@@ -104,6 +123,10 @@ def sync_wallet():
         sender_id = entry.get('first_party_id')
         amount = entry['amount']
         reason = entry.get('reason', '')
+        # description mirrors the client-visible text (e.g. "Ceo X transferred
+        # cash from Corp's corporate account to ..."); it's the only field that
+        # identifies a corp-wallet transfer when the sender resolves to Unknown.
+        description = entry.get('description', '')
         journal_date = entry.get('date', '')
 
         # Corp wallet transfers always go to unmatched for manual allocation:
@@ -116,6 +139,8 @@ def sync_wallet():
 
         if sender_user:
             sender_name = sender_user['character_name']
+        elif is_corp_withdrawal:
+            sender_name = _resolve_party_name(auth, sender_id)
         else:
             sender_name = _resolve_character_name(auth, sender_id)
 
@@ -192,6 +217,7 @@ def sync_wallet():
                 sender_name=sender_name,
                 amount=amount,
                 reason=reason,
+                description=description,
                 journal_date=journal_date,
                 order_id=matched_order_id,
                 status='matched',
@@ -205,6 +231,7 @@ def sync_wallet():
                 sender_name=sender_name,
                 amount=amount,
                 reason=reason,
+                description=description,
                 journal_date=journal_date,
                 order_id=None,
                 status='unmatched',

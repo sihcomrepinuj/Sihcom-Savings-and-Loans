@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS wallet_journal (
     sender_name     TEXT NOT NULL,
     amount          REAL NOT NULL,
     reason          TEXT,
+    description     TEXT,
     journal_date    TEXT NOT NULL,
     order_id        INTEGER,
     status          TEXT NOT NULL DEFAULT 'unmatched',
@@ -201,6 +202,10 @@ def init_db():
 
     # Per-user interest pause (covers both savings and loan accrual)
     _try_alter(db, "ALTER TABLE users ADD COLUMN interest_paused INTEGER NOT NULL DEFAULT 0")
+
+    # ESI client-visible description (identifies corp-wallet transfers, where the
+    # sender resolves to "Unknown" because first_party_id isn't a character)
+    _try_alter(db, "ALTER TABLE wallet_journal ADD COLUMN description TEXT")
 
     # Backfill category on existing orders from ship_catalog
     db.execute('''

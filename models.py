@@ -337,13 +337,14 @@ def journal_entry_exists(journal_id):
 
 
 def insert_journal_entry(journal_id, sender_id, sender_name, amount, reason,
-                         journal_date, order_id=None, status='unmatched'):
+                         journal_date, order_id=None, status='unmatched',
+                         description=None):
     db = database.get_db()
     db.execute(
         'INSERT OR IGNORE INTO wallet_journal '
-        '(journal_id, sender_id, sender_name, amount, reason, journal_date, order_id, status) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        (journal_id, sender_id, sender_name, amount, reason, journal_date, order_id, status)
+        '(journal_id, sender_id, sender_name, amount, reason, description, journal_date, order_id, status) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (journal_id, sender_id, sender_name, amount, reason, description, journal_date, order_id, status)
     )
     db.commit()
 
