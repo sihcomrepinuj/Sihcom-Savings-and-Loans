@@ -1,10 +1,11 @@
 import atexit
 import logging
 import secrets
+from datetime import datetime
 from functools import wraps
 from flask import (
     Flask, session, redirect, url_for, render_template,
-    request, flash, abort, g
+    request, flash, abort, g, jsonify
 )
 from preston import Preston
 from config import Config
@@ -213,6 +214,33 @@ def inject_notification_count():
     if 'user_id' in session:
         return {'unread_notification_count': models.get_unread_count(session['user_id'])}
     return {'unread_notification_count': 0}
+
+
+def _seconds_to_next_wallet_sync():
+    """Seconds until the next scheduled wallet sync, or None if unavailable.
+
+    The scheduler is only created when not app.debug, so this returns None in
+    local dev and the navbar timer hides itself.
+    """
+    scheduler = globals().get('_scheduler')
+    if scheduler is None:
+        return None
+    job = scheduler.get_job('wallet_sync')
+    if job is None or job.next_run_time is None:
+        return None
+    delta = (job.next_run_time - datetime.now(job.next_run_time.tzinfo)).total_seconds()
+    return max(0, int(delta))
+
+
+@app.context_processor
+def inject_next_sync():
+    return {'next_sync_seconds': _seconds_to_next_wallet_sync()}
+
+
+@app.route('/api/next-sync')
+def api_next_sync():
+    """Polled once per cycle by the navbar countdown to resync to the scheduler."""
+    return jsonify(seconds=_seconds_to_next_wallet_sync())
 
 
 # --- Auth decorators ---

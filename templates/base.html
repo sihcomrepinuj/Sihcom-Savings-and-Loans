@@ -47,6 +47,13 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
+                    <li class="nav-item d-flex align-items-center"
+                        id="syncTimerItem"{% if next_sync_seconds is none %} style="display:none;"{% endif %}>
+                        <span class="nav-link sl-sync-timer" title="Time until the next deposit sync">
+                            <span aria-hidden="true">&#x21BB;</span>
+                            <span id="syncTimer" data-seconds="{{ next_sync_seconds if next_sync_seconds is not none else '' }}">{% if next_sync_seconds is not none %}{{ '%d:%02d' | format(next_sync_seconds // 60, next_sync_seconds % 60) }}{% endif %}</span>
+                        </span>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="{{ url_for('notifications') }}">
                             &#x1F514;
@@ -106,6 +113,54 @@
             btn.title = 'Copy failed';
         });
     });
+    </script>
+    <script>
+    // Navbar countdown to the next wallet sync. Counts down locally each second
+    // and resyncs from the server once per cycle to stay aligned with the scheduler.
+    (function() {
+        var el = document.getElementById('syncTimer');
+        var item = document.getElementById('syncTimerItem');
+        if (!el || !item) return;
+        var remaining = parseInt(el.getAttribute('data-seconds'), 10);
+        if (isNaN(remaining)) return;
+        var waiting = false;
+
+        function fmt(s) {
+            if (s <= 0) return 'now';
+            var m = Math.floor(s / 60), sec = s % 60;
+            return m + ':' + (sec < 10 ? '0' : '') + sec;
+        }
+        function render() { el.textContent = fmt(remaining); }
+
+        function refresh() {
+            fetch('{{ url_for("api_next_sync") }}')
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (d.seconds === null || d.seconds === undefined) {
+                        item.style.display = 'none';
+                        clearInterval(timer);
+                        return;
+                    }
+                    remaining = d.seconds;
+                    waiting = false;
+                    render();
+                })
+                .catch(function() { waiting = false; });
+        }
+
+        render();
+        var timer = setInterval(function() {
+            if (waiting) return;
+            remaining -= 1;
+            if (remaining <= 0) {
+                waiting = true;
+                el.textContent = 'now';
+                setTimeout(refresh, 3000);  // let the sync fire, then pull the next time
+            } else {
+                render();
+            }
+        }, 1000);
+    })();
     </script>
 </body>
 </html>
